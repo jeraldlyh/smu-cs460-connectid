@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export FLASK_APP=app
+export FLASK_APP=main
 export ENV=development
 
-flask run
+flask run --debugger
