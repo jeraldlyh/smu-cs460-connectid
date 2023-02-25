@@ -70,8 +70,7 @@ class Firestore(SingletonClass):
         )
 
         responders = []
-        # type: ignore
-        async for x in docs:
+        async for x in docs:  # type: ignore
             responders.append(Responder.from_dict(x.to_dict()))
 
         return responders
