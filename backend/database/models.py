@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import List
+from typing import Dict, List
 
 
 class ExistingMedicalKnowledge:
@@ -81,8 +81,8 @@ class PWID:
         address: str,
         date_of_birth: datetime,
         gender_preference: str,
-        emergency_contact: List[EmergencyContact],
-        location: Location,
+        emergency_contact: Dict[str, str],
+        location: Dict[str, str],
     ) -> None:
         self.id = id
         self.name = name
@@ -103,7 +103,7 @@ class PWID:
             source["name"],
             source["language_preference"],
             source["phone_number"],
-            source["medical_condition"],
+            source["medical_conditions"],
             source["nric"],
             source["address"],
             source["date_of_birth"],
@@ -143,8 +143,9 @@ class Responder:
         address: str,
         date_of_birth: datetime,
         gender: str,
-        existing_medical_knowledge: List[ExistingMedicalKnowledge],
-        location: Location,
+        existing_medical_knowledge: List[Dict[str, str]],
+        location: Dict[str, str],
+        is_available: bool,
     ) -> None:
         self.id = id
         self.name = name
@@ -157,6 +158,7 @@ class Responder:
         self.gender = gender
         self.existing_medical_knowledge = existing_medical_knowledge
         self.location = location
+        self.is_available = is_available
 
     @staticmethod
     def from_dict(source):
@@ -172,6 +174,7 @@ class Responder:
             source["gender"],
             source["existing_medical_knowledge"],
             source["location"],
+            True,
         )
 
     def to_dict(self):
@@ -187,6 +190,7 @@ class Responder:
             "gender": self.gender,
             "existing_medical_knowledge": self.existing_medical_knowledge,
             "location": self.location,
+            "is_available": self.is_available,
         }
 
     def __repr__(self) -> str:

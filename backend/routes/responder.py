@@ -1,5 +1,4 @@
 from database import Firestore
-from database.errors import NotFoundException
 from database.models import Responder
 from flask import Response, jsonify, request
 

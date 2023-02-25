@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import List
 
 from firebase_admin.firestore import firestore
 
@@ -28,36 +28,50 @@ class Firestore(SingletonClass):
         if not abort_if_created and not doc.exists:
             raise NotFoundException(message)
 
-    def get_pwid_ref(self, name: str) -> firestore.AsyncDocumentReference:
+    def _get_pwid_ref(self, name: str) -> firestore.AsyncDocumentReference:
         return self.db.collection(self.PWID_COLLECTION).document(name)
 
-    async def get_pwid(self, name: str) -> Dict[str, Any] | None:
-        doc_ref = self.get_pwid_ref(name)
+    async def get_pwid(self, name: str) -> PWID:
+        doc_ref = self._get_pwid_ref(name)
         doc = await doc_ref.get()
 
         self._validate_doc(doc, f"{name} does not exist")
-        return doc.to_dict()
+        return PWID.from_dict(doc.to_dict())
 
     async def create_pwid(self, data: PWID) -> None:
-        doc_ref = self.get_pwid_ref(data.name)
+        doc_ref = self._get_pwid_ref(data.name)
         doc = await doc_ref.get()
 
         self._validate_doc(doc, f"{data.name} already exists", True)
         await doc_ref.set(data.to_dict())
 
-    def get_responder_ref(self, name: str) -> firestore.AsyncDocumentReference:
+    def _get_responder_ref(self, name: str) -> firestore.AsyncDocumentReference:
         return self.db.collection(self.RESPONDER_COLLECTION).document(name)
 
-    async def get_responder(self, name: str) -> Dict[str, Any] | None:
-        doc_ref = self.get_responder_ref(name)
+    async def get_responder(self, name: str) -> Responder:
+        doc_ref = self._get_responder_ref(name)
         doc = await doc_ref.get()
 
         self._validate_doc(doc, f"{name} does not exist")
-        return doc.to_dict()
+        return Responder.from_dict(doc.to_dict())
 
     async def create_responder(self, data: Responder) -> None:
-        doc_ref = self.get_responder_ref(data.name)
+        doc_ref = self._get_responder_ref(data.name)
         doc = await doc_ref.get()
 
         self._validate_doc(doc, f"{data.name} already exists", True)
         await doc_ref.set(data.to_dict())
+
+    async def get_responders(self) -> List[Responder]:
+        docs = (
+            self.db.collection(self.RESPONDER_COLLECTION)
+            .where("is_available", "==", True)
+            .stream()
+        )
+
+        responders = []
+        # type: ignore
+        async for x in docs:
+            responders.append(Responder.from_dict(x.to_dict()))
+
+        return responders
