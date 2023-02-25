@@ -76,7 +76,7 @@ class PWID:
         name: str,
         language_preference: str,
         phone_number: str,
-        medical_condition: List[str],
+        medical_conditions: List[str],
         nric: str,
         address: str,
         date_of_birth: datetime,
@@ -88,7 +88,7 @@ class PWID:
         self.name = name
         self.language_preference = language_preference
         self.phone_number = phone_number
-        self.medical_condition = medical_condition
+        self.medical_conditions = medical_conditions
         self.nric = nric
         self.address = address
         self.date_of_birth = date_of_birth
@@ -99,7 +99,7 @@ class PWID:
     @staticmethod
     def from_dict(source):
         return PWID(
-            source["id"],
+            str(uuid.uuid4()),
             source["name"],
             source["language_preference"],
             source["phone_number"],
@@ -118,13 +118,13 @@ class PWID:
             "name": self.name,
             "language_preference": self.language_preference,
             "phone_number": self.phone_number,
-            "medical_condition": self.medical_condition,
+            "medical_conditions": self.medical_conditions,
             "nric": self.nric,
             "address": self.address,
             "date_of_birth": self.date_of_birth,
             "gender_preference": self.gender_preference,
-            "emergency_contact": [x.to_dict() for x in self.emergency_contact],
-            "location": self.location.to_dict(),
+            "emergency_contact": self.emergency_contact,
+            "location": self.location,
         }
 
     def __repr__(self) -> str:
