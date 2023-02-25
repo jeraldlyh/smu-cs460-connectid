@@ -6,6 +6,7 @@ app = Flask(__name__)
 
 import routes.pwid
 import routes.responder
+import routes.telegram
 
 
 @app.errorhandler(Exception)
