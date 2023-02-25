@@ -1,3 +1,4 @@
+import json
 import os
 
 from dotenv import load_dotenv
@@ -6,6 +7,35 @@ from firebase_admin import initialize_app
 # Firebase Initialisation
 load_dotenv()
 credential_path = str(os.getenv("CREDENTIAL_PATH"))
+
+
+def create_firestore_credentials() -> None:
+    file = open(credential_path, "w")
+    file.write(
+        json.dumps(
+            {
+                "type": str(os.getenv("FIRESTORE_TYPE")),
+                "project_id": str(os.getenv("FIRESTORE_PROJECT_ID")),
+                "private_key_id": str(os.getenv("FIRESTORE_PRIVATE_KEY_ID")),
+                "private_key": str(os.getenv("FIRESTORE_PRIVATE_KEY")),
+                "client_email": str(os.getenv("FIRESTORE_CLIENT_EMAIL")),
+                "client_id": str(os.getenv("FIRESTORE_CLIENT_ID")),
+                "auth_uri": str(os.getenv("FIRESTORE_AUTH_URI")),
+                "token_uri": str(os.getenv("FIRESTORE_TOKEN_URI")),
+                "auth_provider_x509_cert_url": str(
+                    os.getenv("FIRESTORE_AUTH_PROVIDER_X509_CERT_URL")
+                ),
+                "client_x509_cert_url": str(
+                    os.getenv("FIRESTORE_CLIENT_X509_CERT_URL")
+                ),
+            },
+            indent=4,
+        )
+    )
+    file.close()
+
+
+create_firestore_credentials()
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credential_path
 initialize_app()
 
