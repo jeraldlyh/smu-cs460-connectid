@@ -161,16 +161,16 @@ class Responder:
         state: CustomStates = CustomStates.ONBOARD,
     ) -> None:
         self.id = id
+        self.telegram_id = telegram_id
+        self.location = location
         self.name = name
         self.language = language
         self.phone_number = phone_number
-        self.telegram_id = telegram_id
         self.nric = nric
         self.address = address
         self.date_of_birth = date_of_birth
         self.gender = gender
         self.existing_medical_knowledge = existing_medical_knowledge
-        self.location = location
         self.is_available = is_available
         self.state = state
 
@@ -178,18 +178,18 @@ class Responder:
     def from_dict(source):
         return Responder(
             source["id"],
+            source["telegram_id"],
+            source["location"],
             source["name"],
             source["language"],
             source["phone_number"],
-            source["telegram_id"],
             source["nric"],
             source["address"],
             source["date_of_birth"],
             source["gender"],
             source["existing_medical_knowledge"],
-            source["location"],
             source["is_available"],
-            source["state"],
+            CustomStates(source["state"]),
         )
 
     def to_dict(self):
@@ -206,6 +206,7 @@ class Responder:
             "existing_medical_knowledge": self.existing_medical_knowledge,
             "location": self.location,
             "is_available": self.is_available,
+            "state": self.state.value,
         }
 
     def __repr__(self) -> str:

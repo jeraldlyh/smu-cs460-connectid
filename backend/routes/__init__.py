@@ -7,9 +7,7 @@ app = Flask(__name__)
 import routes.pwid
 import routes.responder
 import routes.sos
-
-# import routes.telegram
-
+import routes.telegram
 
 # @app.errorhandler(Exception)
 # def handle_exception(exception: Exception) -> tuple[Response, int]:

@@ -59,8 +59,6 @@ class Firestore(SingletonClass):
         doc_ref = self._get_responder_ref(data.telegram_id)
         doc = await doc_ref.get()
 
-        print("Creating")
-
         self._validate_doc(doc, f"{data.name} already exists", True)
         await doc_ref.set(data.to_dict())
 
@@ -78,6 +76,5 @@ class Firestore(SingletonClass):
         return responders
 
     async def update_responder(self, data: Responder) -> None:
-        responder = self._get_responder_ref(data.telegram_id)
-
-        await responder.update(data.to_dict())
+        doc_ref = self._get_responder_ref(data.telegram_id)
+        await doc_ref.update(data.to_dict())

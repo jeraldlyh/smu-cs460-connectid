@@ -28,6 +28,8 @@ async def request_help():
         sys.maxsize - pwid_longitude,
     )
 
+    # TODO- add matching for language
+
     for responder in responders:
         responder_latitude = int(responder.location.get("latitude", 0))
         responder_longitude = int(responder.location.get("longitude", 0))
