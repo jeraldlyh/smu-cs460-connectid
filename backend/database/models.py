@@ -68,6 +68,7 @@ from typing import Dict, List
 
 
 class CustomStates(Enum):
+    NOOP = -1
     ONBOARD = 0
     NAME = 1
     LANGUAGE = 2

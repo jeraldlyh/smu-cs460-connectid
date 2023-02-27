@@ -1,9 +1,11 @@
 import uuid
+from datetime import datetime
 
 from database import Firestore
 from database.models import CustomStates, Responder
 from telebot import types
 from telebot.async_telebot import AsyncTeleBot
+from telebot_calendar import Calendar, CallbackData
 
 
 def _retrieve_next_state(responder: Responder) -> CustomStates:
@@ -93,10 +95,61 @@ async def process_nric(
 
 
 async def process_address(
-    bot: AsyncTeleBot, responder: Responder, message: types.Message
+    bot: AsyncTeleBot,
+    responder: Responder,
+    message: types.Message,
+    calendar: Calendar,
+    calendar_callback: CallbackData,
 ) -> None:
     if not message.text:
         return
 
     responder.address = message.text
-    await bot.send_message(message.chat.id, "Kindly provide your date of birth")
+    await bot.send_message(
+        message.chat.id,
+        "Kindly provide your date of birth",
+        reply_markup=calendar.create_calendar(
+            name=calendar_callback.prefix,
+            year=datetime.now().year,
+            month=datetime.now().month,
+        ),
+    )
+
+
+async def process_date_of_birth(
+    bot: AsyncTeleBot,
+    callback: types.CallbackQuery,
+    calendar: Calendar,
+    calendar_callback: CallbackData,
+    callback_data: str,
+) -> None:
+    # TODO - create custom calendar module
+
+    genders = ["Male", "Female"]
+    keyboard = types.InlineKeyboardMarkup()
+    buttons = [
+        types.InlineKeyboardButton(gender, callback_data=f"gender {gender.lower()}")
+        for gender in genders
+    ]
+    keyboard.add(*buttons, row_width=2)
+
+    await bot.send_message(
+        callback.message.chat.id, "Kindly select your gender", reply_markup=keyboard
+    )
+
+
+async def process_gender(
+    bot: AsyncTeleBot,
+    database: Firestore,
+    callback: types.CallbackQuery,
+    gender: str,
+) -> None:
+    responder = await database.get_responder(callback.from_user.id)
+    responder.gender = gender
+    responder.state = _retrieve_next_state(responder)
+
+    await database.update_responder(responder)
+    await bot.send_message(
+        callback.message.chat.id,
+        f"You've successfully onboarded to ConnectID, kindly head over to your profile to add any existing experience",
+    )
