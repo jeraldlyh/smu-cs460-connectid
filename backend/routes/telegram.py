@@ -8,7 +8,7 @@ from flask import abort, request
 from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_storage import StateMemoryStorage
-from telebot_calendar import ENGLISH_LANGUAGE, Calendar, CallbackData
+from utils.calendar import Calendar, CallbackFactory
 from utils.handlers import (
     _retrieve_next_state,
     process_address,
@@ -28,8 +28,8 @@ WEBHOOK_URL_BASE = str(os.getenv("WEBHOOK_URL"))
 WEBHOOK_URL_PATH = f"/${API_TOKEN}"
 
 bot = AsyncTeleBot(API_TOKEN, state_storage=StateMemoryStorage())
-calendar = Calendar(language=ENGLISH_LANGUAGE)
-calendar_callback = CallbackData("calendar", "action", "year", "month", "day")
+calendar = Calendar()
+calendar_callback = CallbackFactory("calendar", "action", "day", "month", "day")
 
 
 @app.route(WEBHOOK_URL_PATH, methods=["POST"])
@@ -47,37 +47,42 @@ async def webhook() -> str | NoReturn:
 
 @bot.callback_query_handler(func=lambda call: True)
 async def callback_handler(call: types.CallbackQuery) -> None:
-    # callback_data may be in the form of 'language malay'
+    # callback_data are separated by <action> <payload>
     callback_data = call.data.split(" ") if " " in call.data else [call.data]
     action = callback_data[0]
     database = Firestore()
 
-    # Handle callback data separately for external calendar module
-    if call.data.startswith(calendar_callback.prefix):
-        callback_data = call.data
-        action = "calendar"
-
     match action:
         case "onboard":
-            await process_onboard(bot, database, call)
+            await process_onboard(bot=bot, database=database, callback=call)
         case "language":
-            await process_language(bot, database, call, [callback_data[1]])
+            await process_language(
+                bot=bot, database=database, callback=call, languages=[callback_data[1]]
+            )
         case "calendar":
             await process_date_of_birth(
-                bot, call, calendar, calendar_callback, str(callback_data)
+                bot=bot,
+                database=database,
+                callback=call,
+                calendar=calendar,
+                callback_data=callback_data,
             )
         case "gender":
-            await process_gender(bot, database, call, callback_data[1])
+            await process_gender(
+                bot=bot, database=database, callback=call, gender=callback_data[1]
+            )
 
 
 @bot.message_handler(commands=["start"])
 async def onboard_responder(message: types.Message) -> None:
-    onboard_button = types.InlineKeyboardButton("📝 Onboard", callback_data="onboard")
+    onboard_button = types.InlineKeyboardButton(
+        text="📝 Onboard", callback_data="onboard"
+    )
     check_in_button = types.InlineKeyboardButton(
-        "🕹️ Check-In", callback_data="check_in"
+        text="✅ Check-In", callback_data="check_in"
     )
     check_out_button = types.InlineKeyboardButton(
-        "❌ Check-Out", callback_data="check_out"
+        text="❌ Check-Out", callback_data="check_out"
     )
     keyboard = types.InlineKeyboardMarkup()
     keyboard.add(onboard_button)
@@ -96,7 +101,7 @@ async def message_handler(message: types.Message):
         database = Firestore()
         responder = await database.get_responder(message.from_user.id)
         has_error = False
-        is_step_completed = False
+        is_text_required_completed = False
 
         match responder.state:
             case CustomStates.NAME:
@@ -118,7 +123,7 @@ async def message_handler(message: types.Message):
             case CustomStates.EXISTING_MEDICAL_KNOWLEDGE:
                 pass
 
-        if not has_error and is_step_completed:
+        if not has_error and is_text_required_completed:
             responder.state = _retrieve_next_state(responder)
             await database.update_responder(responder)
 

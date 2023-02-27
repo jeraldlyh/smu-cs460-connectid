@@ -1,11 +1,13 @@
 import uuid
 from datetime import datetime
+from typing import List
 
 from database import Firestore
 from database.models import CustomStates, Responder
 from telebot import types
 from telebot.async_telebot import AsyncTeleBot
-from telebot_calendar import Calendar, CallbackData
+
+from utils.calendar import Calendar, CallbackFactory
 
 
 def _retrieve_next_state(responder: Responder) -> CustomStates:
@@ -37,9 +39,9 @@ async def process_onboard(
 
 async def process_name(
     bot: AsyncTeleBot, message: types.Message, responder: Responder
-) -> None:
+) -> bool:
     if not message.text:
-        return
+        return False
 
     responder.name = message.text
     languages = ["Chinese", "English", "Malay"]
@@ -55,6 +57,7 @@ async def process_name(
     await bot.send_message(
         message.chat.id, "Kindly pick your language", reply_markup=keyboard
     )
+    return True
 
 
 async def process_language(
@@ -76,22 +79,24 @@ async def process_language(
 
 async def process_phone_number(
     bot: AsyncTeleBot, responder: Responder, message: types.Message
-) -> None:
+) -> bool:
     if not message.text:
-        return
+        return False
 
     responder.phone_number = message.text
     await bot.send_message(message.chat.id, "Kindly provide your NRIC")
+    return True
 
 
 async def process_nric(
     bot: AsyncTeleBot, responder: Responder, message: types.Message
-) -> None:
+) -> bool:
     if not message.text:
-        return
+        return False
 
     responder.nric = message.text
     await bot.send_message(message.chat.id, "Kindly provide your address")
+    return True
 
 
 async def process_address(
@@ -99,32 +104,53 @@ async def process_address(
     responder: Responder,
     message: types.Message,
     calendar: Calendar,
-    calendar_callback: CallbackData,
-) -> None:
+    factory: CallbackFactory,
+) -> bool:
     if not message.text:
-        return
+        return False
 
     responder.address = message.text
+    now = datetime.now()
     await bot.send_message(
         message.chat.id,
         "Kindly provide your date of birth",
-        reply_markup=calendar.create_calendar(
-            name=calendar_callback.prefix,
-            year=datetime.now().year,
-            month=datetime.now().month,
+        reply_markup=calendar.create(
+            name=factory.prefix,
+            month=now.month,
+            year=now.year,
         ),
     )
+    return True
 
 
 async def process_date_of_birth(
     bot: AsyncTeleBot,
+    database: Firestore,
     callback: types.CallbackQuery,
     calendar: Calendar,
-    calendar_callback: CallbackData,
-    callback_data: str,
+    callback_data: List[str],
 ) -> None:
-    # TODO - create custom calendar module
+    # Handles calendar callbacks
+    name, action, day, month, year = callback_data
+    response = await calendar.handle_callback(
+        bot=bot,
+        callback=callback,
+        name=name,
+        action=action,
+        day=int(day),
+        month=int(month),
+        year=int(year),
+    )
 
+    if not isinstance(response, datetime):
+        return
+
+    responder = await database.get_responder(callback.from_user.id)
+    responder.date_of_birth = str(response.date())
+    responder.state = _retrieve_next_state(responder)
+    await database.update_responder(responder)
+
+    # Proceeds to next step
     genders = ["Male", "Female"]
     keyboard = types.InlineKeyboardMarkup()
     buttons = [
@@ -144,11 +170,13 @@ async def process_gender(
     callback: types.CallbackQuery,
     gender: str,
 ) -> None:
+    # Handles gender selection
     responder = await database.get_responder(callback.from_user.id)
     responder.gender = gender
     responder.state = _retrieve_next_state(responder)
-
     await database.update_responder(responder)
+
+    # Proceeds to next step
     await bot.send_message(
         callback.message.chat.id,
         f"You've successfully onboarded to ConnectID, kindly head over to your profile to add any existing experience",
