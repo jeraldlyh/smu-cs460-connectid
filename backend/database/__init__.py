@@ -3,14 +3,8 @@ from typing import List
 from firebase_admin.firestore import firestore
 
 from database.errors import AlreadyExistsException, NotFoundException
-from database.models import PWID, CustomStates, Responder
-
-
-class SingletonClass(object):
-    def __new__(cls):
-        if not hasattr(cls, "instance"):
-            cls.instance = super(SingletonClass, cls).__new__(cls)
-        return cls.instance
+from database.models import PWID, Responder
+from database.singleton import SingletonClass
 
 
 class Firestore(SingletonClass):
@@ -78,3 +72,14 @@ class Firestore(SingletonClass):
     async def update_responder(self, data: Responder) -> None:
         doc_ref = self._get_responder_ref(data.telegram_id)
         await doc_ref.update(data.to_dict())
+
+    async def update_latest_bot_message(self, data: Responder, message_id: int) -> None:
+        responder = await self.get_responder(data.telegram_id)
+        responder.message_id = message_id
+
+        await self.update_responder(responder)
+
+    async def get_latest_bot_message(self, data: Responder) -> int:
+        responder = await self.get_responder(data.telegram_id)
+
+        return responder.message_id

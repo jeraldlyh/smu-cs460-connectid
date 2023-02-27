@@ -162,6 +162,7 @@ class Responder:
         existing_medical_knowledge: List[Dict[str, str]] = [],
         is_available: bool = True,
         state: CustomStates = CustomStates.ONBOARD,
+        message_id: int = -1,  # Used to keep track of last message sent by bot
     ) -> None:
         self.id = id
         self.telegram_id = telegram_id
@@ -176,6 +177,7 @@ class Responder:
         self.existing_medical_knowledge = existing_medical_knowledge
         self.is_available = is_available
         self.state = state
+        self.message_id = message_id
 
     @staticmethod
     def from_dict(source):
@@ -193,6 +195,7 @@ class Responder:
             source["existing_medical_knowledge"],
             source["is_available"],
             CustomStates(source["state"]),
+            source["message_id"],
         )
 
     def to_dict(self):
@@ -210,6 +213,7 @@ class Responder:
             "location": self.location,
             "is_available": self.is_available,
             "state": self.state.value,
+            "message_id": self.message_id,
         }
 
     def __repr__(self) -> str:

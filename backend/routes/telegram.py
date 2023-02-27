@@ -97,7 +97,10 @@ async def onboard_responder(message: types.Message) -> None:
 
 @bot.message_handler(func=lambda message: True)
 async def message_handler(message: types.Message):
-    if message.text and not message.text.startswith("/"):
+    if not message.text:
+        return
+
+    if not message.text.startswith("/"):
         database = Firestore()
         responder = await database.get_responder(message.from_user.id)
         has_error = False
@@ -105,15 +108,17 @@ async def message_handler(message: types.Message):
 
         match responder.state:
             case CustomStates.NAME:
-                await process_name(bot, message, responder)
+                is_text_required_completed = await process_name(bot, message, responder)
             case CustomStates.LANGUAGE:
                 pass
             case CustomStates.PHONE_NUMBER:
-                await process_phone_number(bot, responder, message)
+                is_text_required_completed = await process_phone_number(
+                    bot, database, responder, message
+                )
             case CustomStates.NRIC:
-                await process_nric(bot, responder, message)
+                is_text_required_completed = await process_nric(bot, responder, message)
             case CustomStates.ADDRESS:
-                await process_address(
+                is_text_required_completed = await process_address(
                     bot, responder, message, calendar, calendar_callback
                 )
             case CustomStates.DATE_OF_BIRTH:
@@ -124,7 +129,6 @@ async def message_handler(message: types.Message):
                 pass
 
         if not has_error and is_text_required_completed:
-            responder.state = _retrieve_next_state(responder)
             await database.update_responder(responder)
 
 

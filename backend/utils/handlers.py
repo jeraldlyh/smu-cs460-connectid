@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from datetime import datetime
 from typing import List
@@ -8,6 +9,7 @@ from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 
 from utils.calendar import Calendar, CallbackFactory
+from utils.text import format_form_text
 
 
 def _retrieve_next_state(responder: Responder) -> CustomStates:
@@ -34,7 +36,12 @@ async def process_onboard(
         },
     )
     await database.create_responder(responder)
-    await bot.send_message(callback.message.chat.id, f"Kindly enter your full name")
+
+    text = format_form_text(responder, "Kindly enter your full name")
+    message = await bot.send_message(
+        chat_id=callback.message.chat.id, text=text, parse_mode="HTML"
+    )
+    await database.update_latest_bot_message(responder, message.id)
 
 
 async def process_name(
@@ -44,6 +51,7 @@ async def process_name(
         return False
 
     responder.name = message.text
+    responder.state = _retrieve_next_state(responder)
     languages = ["Chinese", "English", "Malay"]
     keyboard = types.InlineKeyboardMarkup()
     buttons = [
@@ -53,9 +61,14 @@ async def process_name(
         for language in languages
     ]
     keyboard.add(*buttons, row_width=3)
+    text = format_form_text(responder, "Kindly pick your language")
 
-    await bot.send_message(
-        message.chat.id, "Kindly pick your language", reply_markup=keyboard
+    await bot.edit_message_text(
+        chat_id=message.chat.id,
+        message_id=responder.message_id,
+        text=text,
+        reply_markup=keyboard,
+        parse_mode="HTML",
     )
     return True
 
@@ -66,36 +79,65 @@ async def process_language(
     callback: types.CallbackQuery,
     languages: list[str],
 ) -> None:
+    # Handle language selection
     responder = await database.get_responder(callback.from_user.id)
     # TODO - allow multiple languages
     responder.languages = languages
     responder.state = _retrieve_next_state(responder)
-
     await database.update_responder(responder)
-    await bot.send_message(
-        callback.message.chat.id, f"Kindly provide your phone number"
+
+    # Proceed to next step
+    text = format_form_text(responder, "Kindly provide your phone number")
+    await bot.edit_message_text(
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.id,
+        text=text,
+        parse_mode="HTML",
     )
 
 
 async def process_phone_number(
-    bot: AsyncTeleBot, responder: Responder, message: types.Message
+    bot: AsyncTeleBot, database: Firestore, responder: Responder, message: types.Message
 ) -> bool:
+    # Handle phone number input
     if not message.text:
         return False
 
     responder.phone_number = message.text
-    await bot.send_message(message.chat.id, "Kindly provide your NRIC")
+    responder.state = _retrieve_next_state(responder)
+
+    # Proceed to next step
+    text = format_form_text(responder, "Kindly provide your NRIC")
+    response = await bot.edit_message_text(
+        chat_id=message.chat.id,
+        message_id=responder.message_id,
+        text=text,
+        parse_mode="HTML",
+    )
+
+    if isinstance(response, types.Message):
+        await database.update_latest_bot_message(responder, message.id)
     return True
 
 
 async def process_nric(
     bot: AsyncTeleBot, responder: Responder, message: types.Message
 ) -> bool:
+    # Handle NRIC input
     if not message.text:
         return False
 
     responder.nric = message.text
-    await bot.send_message(message.chat.id, "Kindly provide your address")
+    responder.state = _retrieve_next_state(responder)
+
+    # Proceed to next step
+    text = format_form_text(responder, "Kindly provide your address")
+    await bot.edit_message_text(
+        chat_id=message.chat.id,
+        message_id=responder.message_id,
+        text=text,
+        parse_mode="HTML",
+    )
     return True
 
 
@@ -106,19 +148,26 @@ async def process_address(
     calendar: Calendar,
     factory: CallbackFactory,
 ) -> bool:
+    # Handle address input
     if not message.text:
         return False
 
     responder.address = message.text
+    responder.state = _retrieve_next_state(responder)
+
+    # Proceed to next step
     now = datetime.now()
-    await bot.send_message(
-        message.chat.id,
-        "Kindly provide your date of birth",
+    text = format_form_text(responder, "Kindly provide your date of birth")
+    await bot.edit_message_text(
+        chat_id=message.chat.id,
+        message_id=responder.message_id,
+        text=text,
         reply_markup=calendar.create(
             name=factory.prefix,
             month=now.month,
             year=now.year,
         ),
+        parse_mode="HTML",
     )
     return True
 
@@ -159,8 +208,13 @@ async def process_date_of_birth(
     ]
     keyboard.add(*buttons, row_width=2)
 
-    await bot.send_message(
-        callback.message.chat.id, "Kindly select your gender", reply_markup=keyboard
+    text = format_form_text(responder, "Kindly select your gender")
+    await bot.edit_message_text(
+        chat_id=callback.message.chat.id,
+        message_id=responder.message_id,
+        text=text,
+        reply_markup=keyboard,
+        parse_mode="HTML",
     )
 
 
@@ -172,12 +226,22 @@ async def process_gender(
 ) -> None:
     # Handles gender selection
     responder = await database.get_responder(callback.from_user.id)
+    message_id = responder.message_id
     responder.gender = gender
     responder.state = _retrieve_next_state(responder)
+    responder.message_id = -1
     await database.update_responder(responder)
 
     # Proceeds to next step
-    await bot.send_message(
-        callback.message.chat.id,
-        f"You've successfully onboarded to ConnectID, kindly head over to your profile to add any existing experience",
+    text = format_form_text(
+        responder,
+        "You've successfully onboarded to ConnectID, kindly head over to your profile to add any existing experience",
     )
+    await bot.edit_message_text(
+        chat_id=callback.message.chat.id,
+        message_id=message_id,
+        text=text,
+    )
+
+    await asyncio.sleep(50)
+    await bot.delete_message(chat_id=callback.message.chat.id, message_id=message_id)
