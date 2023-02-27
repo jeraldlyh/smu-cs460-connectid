@@ -1,5 +1,3 @@
-import uuid
-from datetime import datetime
 from enum import Enum
 from typing import Dict, List
 
@@ -91,9 +89,10 @@ class PWID:
         medical_conditions: List[str],
         nric: str,
         address: str,
-        date_of_birth: datetime,
+        date_of_birth: str,
+        gender: str,
         gender_preference: str,
-        emergency_contact: Dict[str, str],
+        emergency_contacts: List[Dict[str, str]],
         location: Dict[str, str],
     ) -> None:
         self.id = id
@@ -104,14 +103,15 @@ class PWID:
         self.nric = nric
         self.address = address
         self.date_of_birth = date_of_birth
+        self.gender = gender
         self.gender_preference = gender_preference
-        self.emergency_contact = emergency_contact
+        self.emergency_contacts = emergency_contacts
         self.location = location
 
     @staticmethod
     def from_dict(source):
         return PWID(
-            str(uuid.uuid4()),
+            source["id"],
             source["name"],
             source["language_preference"],
             source["phone_number"],
@@ -119,8 +119,9 @@ class PWID:
             source["nric"],
             source["address"],
             source["date_of_birth"],
+            source["gender"],
             source["gender_preference"],
-            source["emergency_contact"],
+            source["emergency_contacts"],
             source["location"],
         )
 
@@ -134,8 +135,9 @@ class PWID:
             "nric": self.nric,
             "address": self.address,
             "date_of_birth": self.date_of_birth,
+            "gender": self.gender,
             "gender_preference": self.gender_preference,
-            "emergency_contact": self.emergency_contact,
+            "emergency_contacts": self.emergency_contacts,
             "location": self.location,
         }
 
