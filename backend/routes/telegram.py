@@ -1,6 +1,5 @@
 import asyncio
 import os
-import uuid
 from typing import NoReturn
 
 from database import Firestore
@@ -10,6 +9,15 @@ from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_handler_backends import State, StatesGroup
 from telebot.asyncio_storage import StateMemoryStorage
+from utils.handlers import (
+    _retrieve_next_state,
+    process_address,
+    process_language,
+    process_name,
+    process_nric,
+    process_onboard,
+    process_phone_number,
+)
 
 from routes import app
 
@@ -43,38 +51,12 @@ async def callback_handler(call: types.CallbackQuery) -> None:
     ## NOTE: callback_data may be in the form of 'language malay'
     callback_data = call.data.split(" ") if " " in call.data else [call.data]
     database = Firestore()
-    telegram_id = call.from_user.id
 
     match callback_data[0]:
         case "onboard":
-            # User might not have granted location permissions
-            latitude, longitude = 0, 0
-            if call.message.location:
-                latitude = call.message.location.latitude
-                longitude = call.message.location.longitude
-
-            responder = Responder(
-                id=str(uuid.uuid4()),
-                name=call.from_user.full_name,
-                telegram_id=telegram_id,
-                state=CustomStates.NAME,
-                location={
-                    "latitude": latitude,
-                    "longitude": longitude,
-                },
-            )
-            await database.create_responder(responder)
-            await bot.send_message(call.message.chat.id, f"Kindly enter your full name")
+            await process_onboard(bot, database, call)
         case "language":
-            responder = await database.get_responder(telegram_id)
-            # TODO - allow multiple languages
-            responder.language = [callback_data[1]]
-            responder.state = _retrieve_next_state(responder)
-
-            await database.update_responder(responder)
-            await bot.send_message(
-                call.message.chat.id, f"Kindly provide your phone number"
-            )
+            await process_language(bot, database, call, [callback_data[1]])
 
 
 @bot.message_handler(commands=["start"])
@@ -106,33 +88,15 @@ async def message_handler(message: types.Message):
 
         match responder.state:
             case CustomStates.NAME:
-                responder.name = message.text
-                languages = ["Chinese", "English", "Malay"]
-                keyboard = types.InlineKeyboardMarkup()
-                buttons = [
-                    types.InlineKeyboardButton(
-                        language, callback_data=f"language {language.lower()}"
-                    )
-                    for language in languages
-                ]
-                keyboard.add(*buttons, row_width=3)
-
-                await bot.send_message(
-                    message.chat.id, "Kindly pick your language", reply_markup=keyboard
-                )
+                await process_name(bot, message, responder)
             case CustomStates.LANGUAGE:
                 pass
             case CustomStates.PHONE_NUMBER:
-                responder.phone_number = message.text
-                await bot.send_message(message.chat.id, "Kindly provide your NRIC")
+                await process_phone_number(bot, responder, message)
             case CustomStates.NRIC:
-                responder.nric = message.text
-                await bot.send_message(message.chat.id, "Kindly provide your address")
+                await process_nric(bot, responder, message)
             case CustomStates.ADDRESS:
-                responder.address = message.text
-                await bot.send_message(
-                    message.chat.id, "Kindly provide your date of birth"
-                )
+                await process_address(bot, responder, message)
             case CustomStates.DATE_OF_BIRTH:
                 pass
             case CustomStates.GENDER:
@@ -143,10 +107,6 @@ async def message_handler(message: types.Message):
         if not has_error:
             responder.state = _retrieve_next_state(responder)
             await database.update_responder(responder)
-
-
-def _retrieve_next_state(responder: Responder) -> CustomStates:
-    return CustomStates(responder.to_dict()["state"] + 1)
 
 
 async def main() -> None:

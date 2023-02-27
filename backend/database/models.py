@@ -152,7 +152,7 @@ class Responder:
         telegram_id: int,
         location: Dict[str, float],
         name: str = "",
-        language: List[str] = [],
+        languages: List[str] = [],
         phone_number: str = "",
         nric: str = "",
         address: str = "",
@@ -166,7 +166,7 @@ class Responder:
         self.telegram_id = telegram_id
         self.location = location
         self.name = name
-        self.language = language
+        self.languages = languages
         self.phone_number = phone_number
         self.nric = nric
         self.address = address
@@ -183,7 +183,7 @@ class Responder:
             source["telegram_id"],
             source["location"],
             source["name"],
-            source["language"],
+            source["languages"],
             source["phone_number"],
             source["nric"],
             source["address"],
@@ -198,7 +198,7 @@ class Responder:
         return {
             "id": self.id,
             "name": self.name,
-            "language": self.language,
+            "languages": self.languages,
             "phone_number": self.phone_number,
             "telegram_id": self.telegram_id,
             "nric": self.nric,
