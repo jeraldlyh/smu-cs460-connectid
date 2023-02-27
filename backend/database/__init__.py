@@ -3,7 +3,7 @@ from typing import List
 from firebase_admin.firestore import firestore
 
 from database.errors import AlreadyExistsException, NotFoundException
-from database.models import PWID, Responder
+from database.models import PWID, CustomStates, Responder
 
 
 class SingletonClass(object):
@@ -45,19 +45,21 @@ class Firestore(SingletonClass):
         self._validate_doc(doc, f"{data.name} already exists", True)
         await doc_ref.set(data.to_dict())
 
-    def _get_responder_ref(self, name: str) -> firestore.AsyncDocumentReference:
-        return self.db.collection(self.RESPONDER_COLLECTION).document(name)
+    def _get_responder_ref(self, telegram_id: int) -> firestore.AsyncDocumentReference:
+        return self.db.collection(self.RESPONDER_COLLECTION).document(str(telegram_id))
 
-    async def get_responder(self, name: str) -> Responder:
-        doc_ref = self._get_responder_ref(name)
+    async def get_responder(self, telegram_id: int) -> Responder:
+        doc_ref = self._get_responder_ref(telegram_id)
         doc = await doc_ref.get()
 
-        self._validate_doc(doc, f"{name} does not exist")
+        self._validate_doc(doc, f"{telegram_id} does not exist")
         return Responder.from_dict(doc.to_dict())
 
     async def create_responder(self, data: Responder) -> None:
-        doc_ref = self._get_responder_ref(data.name)
+        doc_ref = self._get_responder_ref(data.telegram_id)
         doc = await doc_ref.get()
+
+        print("Creating")
 
         self._validate_doc(doc, f"{data.name} already exists", True)
         await doc_ref.set(data.to_dict())
@@ -74,3 +76,8 @@ class Firestore(SingletonClass):
             responders.append(Responder.from_dict(x.to_dict()))
 
         return responders
+
+    async def update_responder(self, data: Responder) -> None:
+        responder = self._get_responder_ref(data.telegram_id)
+
+        await responder.update(data.to_dict())

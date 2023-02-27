@@ -1,72 +1,84 @@
 import uuid
 from datetime import datetime
+from enum import Enum
 from typing import Dict, List
 
+# class ExistingMedicalKnowledge:
+#     def __init__(self, medical_condition: str, description: str) -> None:
+#         self.medical_condition = medical_condition
+#         self.description = description
 
-class ExistingMedicalKnowledge:
-    def __init__(self, medical_condition: str, description: str) -> None:
-        self.medical_condition = medical_condition
-        self.description = description
+#     @staticmethod
+#     def from_dict(source):
+#         return ExistingMedicalKnowledge(
+#             source["medical_condition"],
+#             source["description"],
+#         )
 
-    @staticmethod
-    def from_dict(source):
-        return ExistingMedicalKnowledge(
-            source["medical_condition"],
-            source["description"],
-        )
+#     def to_dict(self):
+#         return {
+#             "medical_condition": self.medical_condition,
+#             "description": self.description,
+#         }
 
-    def to_dict(self):
-        return {
-            "medical_condition": self.medical_condition,
-            "description": self.description,
-        }
-
-    def __repr__(self) -> str:
-        return str(vars(self))
-
-
-class Location:
-    def __init__(self, longitude: int, latitude: int) -> None:
-        self.longitude = longitude
-        self.latitude = latitude
-
-    @staticmethod
-    def from_dict(source):
-        return Location(
-            source["longitude"],
-            source["latitude"],
-        )
-
-    def to_dict(self):
-        return {
-            "longitude": self.longitude,
-            "latitude": self.latitude,
-        }
+#     def __repr__(self) -> str:
+#         return str(vars(self))
 
 
-class EmergencyContact:
-    def __init__(self, name: str, phone_number: str, relationship: str) -> None:
-        self.name = name
-        self.phone_number = phone_number
-        self.relationship = relationship
+# class Location:
+#     def __init__(self, longitude: int, latitude: int) -> None:
+#         self.longitude = longitude
+#         self.latitude = latitude
 
-    @staticmethod
-    def from_dict(source):
-        return EmergencyContact(
-            source["name"],
-            source["phone_number"],
-            source["relationship"],
-        )
+#     @staticmethod
+#     def from_dict(source):
+#         return Location(
+#             source["longitude"],
+#             source["latitude"],
+#         )
 
-    def to_dict(self):
-        return {
-            "name": self.name,
-            "phone_number": self.phone_number,
-            "relationship": self.relationship,
-        }
+#     def to_dict(self):
+#         return {
+#             "longitude": self.longitude,
+#             "latitude": self.latitude,
+#         }
 
-    def __repr__(self) -> str:
-        return str(vars(self))
+
+# class EmergencyContact:
+#     def __init__(self, name: str, phone_number: str, relationship: str) -> None:
+#         self.name = name
+#         self.phone_number = phone_number
+#         self.relationship = relationship
+
+#     @staticmethod
+#     def from_dict(source):
+#         return EmergencyContact(
+#             source["name"],
+#             source["phone_number"],
+#             source["relationship"],
+#         )
+
+#     def to_dict(self):
+#         return {
+#             "name": self.name,
+#             "phone_number": self.phone_number,
+#             "relationship": self.relationship,
+#         }
+
+#     def __repr__(self) -> str:
+#         return str(vars(self))
+
+
+class CustomStates(Enum):
+    ONBOARD = 0
+    NAME = 1
+    LANGUAGE = 2
+    PHONE_NUMBER = 3
+    NRIC = 4
+    ADDRESS = 5
+    DATE_OF_BIRTH = 6
+    GENDER = 7
+    EXISTING_MEDICAL_KNOWLEDGE = 8
 
 
 class PWID:
@@ -135,17 +147,18 @@ class Responder:
     def __init__(
         self,
         id: str,
-        name: str,
-        language: str,
-        phone_number: str,
-        telegram_id: str,
-        nric: str,
-        address: str,
-        date_of_birth: datetime,
-        gender: str,
-        existing_medical_knowledge: List[Dict[str, str]],
-        location: Dict[str, str],
-        is_available: bool,
+        telegram_id: int,
+        location: Dict[str, float],
+        name: str = "",
+        language: List[str] = [],
+        phone_number: str = "",
+        nric: str = "",
+        address: str = "",
+        date_of_birth: str = "",
+        gender: str = "",
+        existing_medical_knowledge: List[Dict[str, str]] = [],
+        is_available: bool = True,
+        state: CustomStates = CustomStates.ONBOARD,
     ) -> None:
         self.id = id
         self.name = name
@@ -159,11 +172,12 @@ class Responder:
         self.existing_medical_knowledge = existing_medical_knowledge
         self.location = location
         self.is_available = is_available
+        self.state = state
 
     @staticmethod
     def from_dict(source):
         return Responder(
-            str(uuid.uuid4()),
+            source["id"],
             source["name"],
             source["language"],
             source["phone_number"],
@@ -174,7 +188,8 @@ class Responder:
             source["gender"],
             source["existing_medical_knowledge"],
             source["location"],
-            True,
+            source["is_available"],
+            source["state"],
         )
 
     def to_dict(self):
