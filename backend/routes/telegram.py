@@ -33,12 +33,20 @@ async def webhook() -> str | NoReturn:
         abort(403)
 
 
-@bot.callback_query_handler(func=lambda call: True)
-async def callback_query(call: types.CallbackQuery) -> None:
-    match call.data:
-        case "onboard":
-            database = Firestore()
+# Name - message_handler
+# Language - callback_handler
+# Phone Number - message_handler
 
+
+@bot.callback_query_handler(func=lambda call: True)
+async def callback_handler(call: types.CallbackQuery) -> None:
+    ## NOTE: callback_data may be in the form of 'language malay'
+    callback_data = call.data.split(" ") if " " in call.data else [call.data]
+    database = Firestore()
+    telegram_id = call.from_user.id
+
+    match callback_data[0]:
+        case "onboard":
             # User might not have granted location permissions
             latitude, longitude = 0, 0
             if call.message.location:
@@ -48,7 +56,7 @@ async def callback_query(call: types.CallbackQuery) -> None:
             responder = Responder(
                 id=str(uuid.uuid4()),
                 name=call.from_user.full_name,
-                telegram_id=call.from_user.id,
+                telegram_id=telegram_id,
                 state=CustomStates.NAME,
                 location={
                     "latitude": latitude,
@@ -57,6 +65,16 @@ async def callback_query(call: types.CallbackQuery) -> None:
             )
             await database.create_responder(responder)
             await bot.send_message(call.message.chat.id, f"Kindly enter your full name")
+        case "language":
+            responder = await database.get_responder(telegram_id)
+            # TODO - allow multiple languages
+            responder.language = [callback_data[1]]
+            responder.state = _retrieve_next_state(responder)
+
+            await database.update_responder(responder)
+            await bot.send_message(
+                call.message.chat.id, f"Kindly provide your phone number"
+            )
 
 
 @bot.message_handler(commands=["start"])
@@ -84,17 +102,37 @@ async def message_handler(message: types.Message):
     if message.text and not message.text.startswith("/"):
         database = Firestore()
         responder = await database.get_responder(message.from_user.id)
+        has_error = False
+
         match responder.state:
             case CustomStates.NAME:
                 responder.name = message.text
+                languages = ["Chinese", "English", "Malay"]
+                keyboard = types.InlineKeyboardMarkup()
+                buttons = [
+                    types.InlineKeyboardButton(
+                        language, callback_data=f"language {language.lower()}"
+                    )
+                    for language in languages
+                ]
+                keyboard.add(*buttons, row_width=3)
+
+                await bot.send_message(
+                    message.chat.id, "Kindly pick your language", reply_markup=keyboard
+                )
             case CustomStates.LANGUAGE:
                 pass
             case CustomStates.PHONE_NUMBER:
-                pass
+                responder.phone_number = message.text
+                await bot.send_message(message.chat.id, "Kindly provide your NRIC")
             case CustomStates.NRIC:
-                pass
+                responder.nric = message.text
+                await bot.send_message(message.chat.id, "Kindly provide your address")
             case CustomStates.ADDRESS:
-                pass
+                responder.address = message.text
+                await bot.send_message(
+                    message.chat.id, "Kindly provide your date of birth"
+                )
             case CustomStates.DATE_OF_BIRTH:
                 pass
             case CustomStates.GENDER:
@@ -102,13 +140,9 @@ async def message_handler(message: types.Message):
             case CustomStates.EXISTING_MEDICAL_KNOWLEDGE:
                 pass
 
-        responder.state = _retrieve_next_state(responder)
-        await database.update_responder(responder)
-
-
-async def _process_name(message: types.Message, responder: Responder):
-    await bot.send_message(message.chat.id, "Kindly enter your fullname")
-    return
+        if not has_error:
+            responder.state = _retrieve_next_state(responder)
+            await database.update_responder(responder)
 
 
 def _retrieve_next_state(responder: Responder) -> CustomStates:
