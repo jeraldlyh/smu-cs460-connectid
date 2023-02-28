@@ -12,14 +12,17 @@ from utils.calendar import Calendar, CallbackFactory
 from utils.handlers import (
     _retrieve_next_state,
     process_address,
+    process_cancel,
     process_date_of_birth,
     process_gender,
     process_language,
+    process_list_medical_conditions,
     process_name,
     process_nric,
     process_onboard,
     process_phone_number,
     process_profile,
+    process_welcome_message,
 )
 
 from routes import app
@@ -76,37 +79,23 @@ async def callback_handler(call: types.CallbackQuery) -> None:
             await process_profile(bot=bot, database=database, callback=call)
         case "option":
             option = callback_data[1]
+            print(callback_data)
 
-            if option == "add":
-                pass
-            else:
-                pass
+            match option:
+                case "add":
+                    if len(callback_data) > 2:
+                        pass
+                    else:
+                        await process_list_medical_conditions(bot=bot, callback=call)
+                case "remove":
+                    pass
+        case "cancel":
+            await process_cancel(bot=bot, callback=call)
 
 
 @bot.message_handler(commands=["start"])
-async def onboard_responder(message: types.Message) -> None:
-    onboard_button = types.InlineKeyboardButton(
-        text="📝 Onboard", callback_data="onboard"
-    )
-    check_in_button = types.InlineKeyboardButton(
-        text="✅ Check-In", callback_data="check_in"
-    )
-    check_out_button = types.InlineKeyboardButton(
-        text="❌ Check-Out", callback_data="check_out"
-    )
-    profile_button = types.InlineKeyboardButton(
-        text="📖 Profile", callback_data="profile"
-    )
-    keyboard = types.InlineKeyboardMarkup()
-    keyboard.add(onboard_button)
-    keyboard.add(check_in_button, check_out_button, row_width=2)
-    keyboard.add(profile_button)
-
-    await bot.send_message(
-        chat_id=message.chat.id,
-        text=("Welcome to ConnectID, below are a list of actions available."),
-        reply_markup=keyboard,
-    )
+async def welcome_message(message: types.Message) -> None:
+    await process_welcome_message(bot, message)
 
 
 @bot.message_handler(func=lambda message: True)

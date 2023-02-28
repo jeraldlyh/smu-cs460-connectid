@@ -16,6 +16,41 @@ def _retrieve_next_state(responder: Responder) -> CustomStates:
     return CustomStates(responder.to_dict()["state"] + 1)
 
 
+async def process_welcome_message(
+    bot: AsyncTeleBot, message: types.Message, is_edit=False
+) -> None:
+    onboard_button = types.InlineKeyboardButton(
+        text="📝 Onboard", callback_data="onboard"
+    )
+    check_in_button = types.InlineKeyboardButton(
+        text="✅ Check-In", callback_data="check_in"
+    )
+    check_out_button = types.InlineKeyboardButton(
+        text="❌ Check-Out", callback_data="check_out"
+    )
+    profile_button = types.InlineKeyboardButton(
+        text="📖 Profile", callback_data="profile"
+    )
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(onboard_button)
+    keyboard.add(profile_button)
+    keyboard.add(check_in_button, check_out_button, row_width=2)
+
+    if is_edit:
+        await bot.edit_message_text(
+            chat_id=message.chat.id,
+            message_id=message.id,
+            text="Welcome to ConnectID, below are a list of actions available.",
+            reply_markup=keyboard,
+        )
+    else:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="Welcome to ConnectID, below are a list of actions available.",
+            reply_markup=keyboard,
+        )
+
+
 async def process_onboard(
     bot: AsyncTeleBot, database: Firestore, callback: types.CallbackQuery
 ) -> None:
@@ -276,7 +311,7 @@ async def process_profile(
     keyboard = types.InlineKeyboardMarkup()
     buttons = [
         types.InlineKeyboardButton(
-            option, callback_data=f"option {option.split(' ')[1]}"
+            option, callback_data=f"option {option.split(' ')[1].lower()}"
         )
         for option in options
     ]
@@ -291,5 +326,48 @@ async def process_profile(
     )
 
 
-async def process_add_medical_knowledge() -> None:
+async def process_cancel(bot: AsyncTeleBot, callback: types.CallbackQuery) -> None:
+    await process_welcome_message(bot=bot, message=callback.message, is_edit=True)
+
+
+async def process_list_medical_conditions(
+    bot: AsyncTeleBot, callback: types.CallbackQuery
+) -> None:
+    options = [
+        "Fragile X syndrome",
+        "Down syndrome",
+        "Developmental delay",
+        "Prader-Willi Syndrome (PWS)",
+        "Fetal alcohol spectrum disorder (FASD)",
+        "Inexperienced",
+    ]
+    keyboard = types.InlineKeyboardMarkup()
+    cancel_button = types.InlineKeyboardButton("Cancel", callback_data="cancel")
+    buttons = [
+        types.InlineKeyboardButton(option, callback_data=f"option add {option}")
+        for option in options
+    ]
+    keyboard.add(*buttons, row_width=2)
+    keyboard.add(cancel_button)
+
+    await bot.edit_message_text(
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.id,
+        text=("Kindly choose one of the options below."),
+        reply_markup=keyboard,
+    )
+
+
+async def process_add_medical_condition(
+    bot: AsyncTeleBot,
+    database: Firestore,
+    callback: types.CallbackQuery,
+    condition: str,
+) -> None:
+    await database.get_responder(callback.from_user.id)
+
+
+async def process_add_medical_condition_description(
+    bot: AsyncTeleBot, callback: types.CallbackQuery
+) -> None:
     pass
