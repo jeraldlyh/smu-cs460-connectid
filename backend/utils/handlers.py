@@ -252,7 +252,3 @@ async def process_gender(
     await bot.delete_message(
         chat_id=callback.message.chat.id, message_id=callback.message.id
     )
-
-
-async def complete_onboarding(self) -> None:
-    pass
