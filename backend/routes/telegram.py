@@ -19,6 +19,7 @@ from utils.handlers import (
     process_nric,
     process_onboard,
     process_phone_number,
+    process_profile,
 )
 
 from routes import app
@@ -71,6 +72,15 @@ async def callback_handler(call: types.CallbackQuery) -> None:
             await process_gender(
                 bot=bot, database=database, callback=call, gender=callback_data[1]
             )
+        case "profile":
+            await process_profile(bot=bot, database=database, callback=call)
+        case "option":
+            option = callback_data[1]
+
+            if option == "add":
+                pass
+            else:
+                pass
 
 
 @bot.message_handler(commands=["start"])
@@ -84,13 +94,17 @@ async def onboard_responder(message: types.Message) -> None:
     check_out_button = types.InlineKeyboardButton(
         text="❌ Check-Out", callback_data="check_out"
     )
+    profile_button = types.InlineKeyboardButton(
+        text="📖 Profile", callback_data="profile"
+    )
     keyboard = types.InlineKeyboardMarkup()
     keyboard.add(onboard_button)
     keyboard.add(check_in_button, check_out_button, row_width=2)
+    keyboard.add(profile_button)
 
-    await bot.reply_to(
-        message,
-        ("Welcome to ConnectID, below are a list of actions available."),
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text=("Welcome to ConnectID, below are a list of actions available."),
         reply_markup=keyboard,
     )
 

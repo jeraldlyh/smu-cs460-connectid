@@ -201,7 +201,7 @@ async def process_date_of_birth(
     await database.update_responder(responder)
 
     # Proceeds to next step
-    genders = ["Male", "Female"]
+    genders = ["👦 Male", "👧 Female"]
     keyboard = types.InlineKeyboardMarkup()
     buttons = [
         types.InlineKeyboardButton(gender, callback_data=f"gender {gender.lower()}")
@@ -252,3 +252,44 @@ async def process_gender(
     await bot.delete_message(
         chat_id=callback.message.chat.id, message_id=callback.message.id
     )
+
+
+async def process_profile(
+    bot: AsyncTeleBot, database: Firestore, callback: types.CallbackQuery
+) -> None:
+    responder = await database.get_responder(callback.from_user.id)
+
+    text = "<b>📖  Profile</b>\n\n"
+    text += f"<b>Name</b>: {responder.name}\n"
+    text += f"<b>Gender</b>: {responder.gender}\n"
+    text += f"<b>Date of Birth</b>: {responder.date_of_birth}\n"
+    text += f"<b>NRIC</b>: {responder.nric}\n"
+    text += f"<b>Phone Number</b>: {responder.phone_number}\n"
+    text += f"<b>Address</b>: {responder.address}\n"
+    text += f"<b>Medical Knowledge</b>: "
+
+    for medical_knowledge in responder.existing_medical_knowledge:
+        text += f"{medical_knowledge['name']} ({medical_knowledge['description']}), "
+    text.rstrip(", ")
+
+    options = ["➕ Add", "➖ Remove"]
+    keyboard = types.InlineKeyboardMarkup()
+    buttons = [
+        types.InlineKeyboardButton(
+            option, callback_data=f"option {option.split(' ')[1]}"
+        )
+        for option in options
+    ]
+    keyboard.add(*buttons, row_width=2)
+
+    await bot.edit_message_text(
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.id,
+        text=text,
+        parse_mode="HTML",
+        reply_markup=keyboard,
+    )
+
+
+async def process_add_medical_knowledge() -> None:
+    pass
