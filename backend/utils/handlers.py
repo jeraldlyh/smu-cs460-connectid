@@ -166,6 +166,7 @@ async def process_address(
             name=factory.prefix,
             month=now.month,
             year=now.year,
+            delete_upon_completion=False,
         ),
         parse_mode="HTML",
     )
@@ -228,20 +229,30 @@ async def process_gender(
     responder = await database.get_responder(callback.from_user.id)
     message_id = responder.message_id
     responder.gender = gender
-    responder.state = _retrieve_next_state(responder)
-    responder.message_id = -1
-    await database.update_responder(responder)
 
     # Proceeds to next step
     text = format_form_text(
         responder,
-        "You've successfully onboarded to ConnectID, kindly head over to your profile to add any existing experience",
+        "You've successfully onboarded to <b><i>ConnectID</i></b>, kindly head over to your profile to add any existing medical experience!",
     )
+
+    # Update responder after formatting text, else step will become -1
+    responder.state = CustomStates.NOOP
+    responder.message_id = -1
+    await database.update_responder(responder)
+
     await bot.edit_message_text(
         chat_id=callback.message.chat.id,
         message_id=message_id,
         text=text,
+        parse_mode="HTML",
     )
 
-    await asyncio.sleep(50)
-    await bot.delete_message(chat_id=callback.message.chat.id, message_id=message_id)
+    await asyncio.sleep(10)
+    await bot.delete_message(
+        chat_id=callback.message.chat.id, message_id=callback.message.id
+    )
+
+
+async def complete_onboarding(self) -> None:
+    pass

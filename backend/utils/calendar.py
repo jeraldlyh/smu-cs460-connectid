@@ -94,7 +94,11 @@ class Calendar:
     )
 
     def create(
-        self, name: str = "calendar", month: int | None = None, year: int | None = None
+        self,
+        name: str = "calendar",
+        month: int | None = None,
+        year: int | None = None,
+        delete_upon_completion: bool = True,
     ) -> InlineKeyboardMarkup:
         """
         Creates an inline keyboard with calendar
@@ -103,7 +107,7 @@ class Calendar:
         :param month: Month to use in the calendar if not default.
         :return: Returns an InlineKeyboardMarkup object with a calendar.
         """
-
+        self._delete_upon_completion = delete_upon_completion
         now = datetime.now()
 
         if year is None:
@@ -242,7 +246,12 @@ class Calendar:
                     text=callback.message.text,
                     chat_id=callback.message.chat.id,
                     message_id=callback.message.id,
-                    reply_markup=self.create(name, previous.month, previous.year),
+                    reply_markup=self.create(
+                        name=name,
+                        month=previous.month,
+                        year=previous.year,
+                        delete_upon_completion=self._delete_upon_completion,
+                    ),
                 )
             case "NEXT":
                 next = now + timedelta(days=31)
@@ -250,7 +259,12 @@ class Calendar:
                     text=callback.message.text,
                     chat_id=callback.message.chat.id,
                     message_id=callback.message.id,
-                    reply_markup=self.create(name, next.month, next.year),
+                    reply_markup=self.create(
+                        name=name,
+                        month=next.month,
+                        year=next.year,
+                        delete_upon_completion=self._delete_upon_completion,
+                    ),
                 )
             case "LIST_MONTHS":
                 await bot.edit_message_text(
@@ -260,9 +274,10 @@ class Calendar:
                     reply_markup=self._list_months(name, year),
                 )
             case "DAY":
-                await bot.delete_message(
-                    chat_id=callback.message.chat.id, message_id=callback.message.id
-                )
+                if self._delete_upon_completion:
+                    await bot.delete_message(
+                        chat_id=callback.message.chat.id, message_id=callback.message.id
+                    )
                 return datetime(year, month, day)
             case "MONTH":
                 await bot.edit_message_text(

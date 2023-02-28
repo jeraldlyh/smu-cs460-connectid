@@ -131,6 +131,9 @@ async def message_handler(message: types.Message):
         if not has_error and is_text_required_completed:
             await database.update_responder(responder)
 
+        if responder.state != CustomStates.NOOP:
+            await bot.delete_message(chat_id=message.chat.id, message_id=message.id)
+
 
 async def main() -> None:
     # Remove webhook, it fails sometimes if there is a previous webhook
