@@ -10,7 +10,8 @@ from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_storage import StateMemoryStorage
 from utils.calendar import Calendar, CallbackFactory
 from utils.handlers import (
-    _retrieve_next_state,
+    process_add_medical_condition,
+    process_add_medical_condition_description,
     process_address,
     process_cancel,
     process_date_of_birth,
@@ -22,6 +23,7 @@ from utils.handlers import (
     process_onboard,
     process_phone_number,
     process_profile,
+    process_skip_description,
     process_welcome_message,
 )
 
@@ -58,7 +60,10 @@ async def callback_handler(call: types.CallbackQuery) -> None:
 
     match action:
         case "onboard":
-            await process_onboard(bot=bot, database=database, callback=call)
+            try:
+                await process_onboard(bot=bot, database=database, callback=call)
+            except:
+                pass  # todo
         case "language":
             await process_language(
                 bot=bot, database=database, callback=call, languages=[callback_data[1]]
@@ -84,23 +89,36 @@ async def callback_handler(call: types.CallbackQuery) -> None:
             match option:
                 case "add":
                     if len(callback_data) > 2:
-                        pass
+                        condition = " ".join(callback_data[2:])
+                        await process_add_medical_condition(
+                            bot=bot,
+                            database=database,
+                            callback=call,
+                            condition=condition,
+                        )
                     else:
-                        await process_list_medical_conditions(bot=bot, callback=call)
+                        await process_list_medical_conditions(
+                            bot=bot, database=database, callback=call
+                        )
                 case "remove":
                     pass
+                case "skip":
+                    await process_skip_description(
+                        bot=bot, database=database, callback=call
+                    )
         case "cancel":
             await process_cancel(bot=bot, callback=call)
 
 
 @bot.message_handler(commands=["start"])
 async def welcome_message(message: types.Message) -> None:
-    await process_welcome_message(bot, message)
+    database = Firestore()
+    await process_welcome_message(bot=bot, database=database, message=message)
 
 
 @bot.message_handler(func=lambda message: True)
 async def message_handler(message: types.Message):
-    if not message.text:
+    if not message.text or message.from_user.is_bot:
         return
 
     if not message.text.startswith("/"):
@@ -111,25 +129,37 @@ async def message_handler(message: types.Message):
 
         match responder.state:
             case CustomStates.NAME:
-                is_text_required_completed = await process_name(bot, message, responder)
+                is_text_required_completed = await process_name(
+                    bot=bot, message=message, responder=responder
+                )
             case CustomStates.LANGUAGE:
                 pass
             case CustomStates.PHONE_NUMBER:
                 is_text_required_completed = await process_phone_number(
-                    bot, database, responder, message
+                    bot=bot, database=database, responder=responder, message=message
                 )
             case CustomStates.NRIC:
-                is_text_required_completed = await process_nric(bot, responder, message)
+                is_text_required_completed = await process_nric(
+                    bot=bot, responder=responder, message=message
+                )
             case CustomStates.ADDRESS:
                 is_text_required_completed = await process_address(
-                    bot, responder, message, calendar, calendar_callback
+                    bot=bot,
+                    responder=responder,
+                    message=message,
+                    calendar=calendar,
+                    factory=calendar_callback,
                 )
             case CustomStates.DATE_OF_BIRTH:
                 pass
             case CustomStates.GENDER:
                 pass
             case CustomStates.EXISTING_MEDICAL_KNOWLEDGE:
-                pass
+                is_text_required_completed = (
+                    await process_add_medical_condition_description(
+                        bot, responder, message
+                    )
+                )
 
         if not has_error and is_text_required_completed:
             await database.update_responder(responder)

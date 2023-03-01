@@ -1,7 +1,7 @@
 import asyncio
 import uuid
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from database import Firestore
 from database.models import CustomStates, Responder
@@ -11,13 +11,26 @@ from telebot.async_telebot import AsyncTeleBot
 from utils.calendar import Calendar, CallbackFactory
 from utils.text import format_form_text
 
+CANCEL_BUTTON = types.InlineKeyboardButton("Cancel", callback_data="cancel")
+MEDICAL_CONDITIONS = [
+    "Fragile X syndrome",
+    "Down syndrome",
+    "Developmental delay",
+    "Prader-Willi Syndrome (PWS)",
+    "Fetal alcohol spectrum disorder (FASD)",
+]
+
 
 def _retrieve_next_state(responder: Responder) -> CustomStates:
     return CustomStates(responder.to_dict()["state"] + 1)
 
 
 async def process_welcome_message(
-    bot: AsyncTeleBot, message: types.Message, is_edit=False
+    bot: AsyncTeleBot,
+    message: types.Message | int,
+    is_edit=False,
+    database: Optional[Firestore] = None,
+    chat_id: Optional[int] = None,
 ) -> None:
     onboard_button = types.InlineKeyboardButton(
         text="📝 Onboard", callback_data="onboard"
@@ -37,18 +50,21 @@ async def process_welcome_message(
     keyboard.add(check_in_button, check_out_button, row_width=2)
 
     if is_edit:
+        is_integer = isinstance(message, int)
         await bot.edit_message_text(
-            chat_id=message.chat.id,
-            message_id=message.id,
+            chat_id=chat_id if is_integer else message.chat.id,
+            message_id=message if is_integer else message.id,
             text="Welcome to ConnectID, below are a list of actions available.",
             reply_markup=keyboard,
         )
-    else:
-        await bot.send_message(
+        return
+    if database and isinstance(message, types.Message):
+        message = await bot.send_message(
             chat_id=message.chat.id,
             text="Welcome to ConnectID, below are a list of actions available.",
             reply_markup=keyboard,
         )
+        await database.update_latest_bot_message(message.chat.id, message.id)
 
 
 async def process_onboard(
@@ -273,7 +289,6 @@ async def process_gender(
 
     # Update responder after formatting text, else step will become -1
     responder.state = CustomStates.NOOP
-    responder.message_id = -1
     await database.update_responder(responder)
 
     await bot.edit_message_text(
@@ -284,9 +299,7 @@ async def process_gender(
     )
 
     await asyncio.sleep(10)
-    await bot.delete_message(
-        chat_id=callback.message.chat.id, message_id=callback.message.id
-    )
+    await process_welcome_message(bot, callback.message, True)
 
 
 async def process_profile(
@@ -304,8 +317,12 @@ async def process_profile(
     text += f"<b>Medical Knowledge</b>: "
 
     for medical_knowledge in responder.existing_medical_knowledge:
-        text += f"{medical_knowledge['name']} ({medical_knowledge['description']}), "
-    text.rstrip(", ")
+        has_description = "description" in medical_knowledge
+        medical_description = (
+            f" ({medical_knowledge['description']})" if has_description else ""
+        )
+        text += f"{medical_knowledge['name']}{medical_description}, "
+    text = text.rstrip(", ")  # Remove trailing comma
 
     options = ["➕ Add", "➖ Remove"]
     keyboard = types.InlineKeyboardMarkup()
@@ -316,6 +333,7 @@ async def process_profile(
         for option in options
     ]
     keyboard.add(*buttons, row_width=2)
+    keyboard.add(CANCEL_BUTTON)
 
     await bot.edit_message_text(
         chat_id=callback.message.chat.id,
@@ -331,24 +349,41 @@ async def process_cancel(bot: AsyncTeleBot, callback: types.CallbackQuery) -> No
 
 
 async def process_list_medical_conditions(
-    bot: AsyncTeleBot, callback: types.CallbackQuery
+    bot: AsyncTeleBot, database: Firestore, callback: types.CallbackQuery
 ) -> None:
-    options = [
-        "Fragile X syndrome",
-        "Down syndrome",
-        "Developmental delay",
-        "Prader-Willi Syndrome (PWS)",
-        "Fetal alcohol spectrum disorder (FASD)",
-        "Inexperienced",
-    ]
+    responder = await database.get_responder(callback.from_user.id)
+    existing_experience = (
+        [condition["name"] for condition in responder.existing_medical_knowledge]
+        if len(responder.existing_medical_knowledge) != 0
+        else []
+    )
+
     keyboard = types.InlineKeyboardMarkup()
-    cancel_button = types.InlineKeyboardButton("Cancel", callback_data="cancel")
+    options = list(
+        filter(
+            lambda x: x not in existing_experience,
+            MEDICAL_CONDITIONS,
+        )
+    )
+    print(options, existing_experience, len(options))
+
+    if len(options) == 0:
+        message = await bot.send_message(
+            chat_id=callback.message.chat.id,
+            text=(
+                "You already possess all the medical conditions available in the system. Do contact our staffs at +65 9812 3456 if you deem that this condition is necessary."
+            ),
+        )
+        await asyncio.sleep(3)
+        await bot.delete_message(chat_id=message.chat.id, message_id=message.id)
+        return
+
     buttons = [
         types.InlineKeyboardButton(option, callback_data=f"option add {option}")
         for option in options
     ]
     keyboard.add(*buttons, row_width=2)
-    keyboard.add(cancel_button)
+    keyboard.add(CANCEL_BUTTON)
 
     await bot.edit_message_text(
         chat_id=callback.message.chat.id,
@@ -364,10 +399,71 @@ async def process_add_medical_condition(
     callback: types.CallbackQuery,
     condition: str,
 ) -> None:
-    await database.get_responder(callback.from_user.id)
+    # Add a new condition
+    responder = await database.get_responder(callback.from_user.id)
+    responder.existing_medical_knowledge.append(
+        {"name": condition, "created_at": str(datetime.now())}
+    )
+    responder.state = CustomStates.EXISTING_MEDICAL_KNOWLEDGE
+    await database.update_responder(responder)
+
+    # Proceeds to next step of adding condition description
+    keyboard = types.InlineKeyboardMarkup()
+    cancel_button = types.InlineKeyboardButton("Skip", callback_data="option skip")
+    keyboard.add(cancel_button)
+
+    await bot.edit_message_text(
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.id,
+        text=(
+            f"Kindly provide a short description with <b>{condition}</b> in less than 30 words. If you do not have any description, do proceed to press skip."
+        ),
+        reply_markup=keyboard,
+        parse_mode="HTML",
+    )
+
+
+async def process_skip_description(
+    bot: AsyncTeleBot, database: Firestore, callback: types.CallbackQuery
+) -> None:
+    responder = await database.get_responder(callback.from_user.id)
+    responder.state = CustomStates.NOOP
+    await database.update_responder(responder)
+
+    await bot.edit_message_text(
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.id,
+        text=(f"You have successfully updated your profile."),
+    )
+
+    await asyncio.sleep(3)
+    await process_welcome_message(bot=bot, message=callback.message, is_edit=True)
 
 
 async def process_add_medical_condition_description(
-    bot: AsyncTeleBot, callback: types.CallbackQuery
-) -> None:
-    pass
+    bot: AsyncTeleBot, responder: Responder, message: types.Message
+) -> bool:
+    sorted_medical_conditions = sorted(
+        responder.existing_medical_knowledge,
+        key=lambda x: x["created_at"],
+        reverse=True,
+    )
+
+    sorted_medical_conditions[0] = {
+        **sorted_medical_conditions[0],
+        "description": message.text,
+    }
+    responder.existing_medical_knowledge = sorted_medical_conditions
+
+    await bot.edit_message_text(
+        chat_id=message.chat.id,
+        message_id=responder.message_id,
+        text=(
+            f"You have successfully added a description to {sorted_medical_conditions[0]['name']}."
+        ),
+    )
+    await asyncio.sleep(3)
+    await process_welcome_message(
+        bot=bot, message=responder.message_id, chat_id=message.chat.id, is_edit=True
+    )
+    return True

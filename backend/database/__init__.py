@@ -73,8 +73,14 @@ class Firestore(SingletonClass):
         doc_ref = self._get_responder_ref(data.telegram_id)
         await doc_ref.update(data.to_dict())
 
-    async def update_latest_bot_message(self, data: Responder, message_id: int) -> None:
-        responder = await self.get_responder(data.telegram_id)
+    async def update_latest_bot_message(
+        self, data: Responder | int, message_id: int
+    ) -> None:
+        responder = (
+            await self.get_responder(data.telegram_id)
+            if isinstance(data, Responder)
+            else await self.get_responder(data)
+        )
         responder.message_id = message_id
 
         await self.update_responder(responder)
