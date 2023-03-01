@@ -63,7 +63,7 @@ async def callback_handler(call: types.CallbackQuery) -> None:
             try:
                 await process_onboard(bot=bot, database=database, callback=call)
             except:
-                pass  # todo
+                pass
         case "language":
             await process_language(
                 bot=bot, database=database, callback=call, languages=[callback_data[1]]

@@ -1,7 +1,7 @@
 import asyncio
 import uuid
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from database import Firestore
 from database.models import CustomStates, Responder
@@ -32,6 +32,15 @@ async def process_welcome_message(
     database: Optional[Firestore] = None,
     chat_id: Optional[int] = None,
 ) -> None:
+    is_onboarded = True
+
+    try:
+        await cast(Firestore, database).get_responder(
+            cast(types.Message, message).from_user.id
+        )
+    except:
+        is_onboarded = False
+
     onboard_button = types.InlineKeyboardButton(
         text="📝 Onboard", callback_data="onboard"
     )
@@ -45,7 +54,8 @@ async def process_welcome_message(
         text="📖 Profile", callback_data="profile"
     )
     keyboard = types.InlineKeyboardMarkup()
-    keyboard.add(onboard_button)
+    if not is_onboarded:
+        keyboard.add(onboard_button)
     keyboard.add(profile_button)
     keyboard.add(check_in_button, check_out_button, row_width=2)
 
@@ -58,9 +68,9 @@ async def process_welcome_message(
             reply_markup=keyboard,
         )
         return
-    if database and isinstance(message, types.Message):
+    if database:
         message = await bot.send_message(
-            chat_id=message.chat.id,
+            chat_id=cast(types.Message, message).chat.id,
             text="Welcome to ConnectID, below are a list of actions available.",
             reply_markup=keyboard,
         )
@@ -314,16 +324,21 @@ async def process_profile(
     text += f"<b>NRIC</b>: {responder.nric}\n"
     text += f"<b>Phone Number</b>: {responder.phone_number}\n"
     text += f"<b>Address</b>: {responder.address}\n"
-    text += f"<b>Medical Knowledge</b>: "
+    text += f"<b>Medical Knowledge</b>"
 
-    for medical_knowledge in responder.existing_medical_knowledge:
+    # Handle inexperienced responders
+    if len(responder.existing_medical_knowledge) == 0:
+        text += "None"
+    else:
+        text += "\n"
+
+    for index, medical_knowledge in enumerate(responder.existing_medical_knowledge):
         has_description = "description" in medical_knowledge
         medical_description = (
-            f" ({medical_knowledge['description']})" if has_description else ""
+            f" - <i>{medical_knowledge['description']}</i>" if has_description else ""
         )
-        text += f"{medical_knowledge['name']}{medical_description}, "
-    text = text.rstrip(", ")  # Remove trailing comma
-
+        text += f"{index + 1}. {medical_knowledge['name']}{medical_description}\n"
+    text = text.rstrip("\n")
     options = ["➕ Add", "➖ Remove"]
     keyboard = types.InlineKeyboardMarkup()
     buttons = [
