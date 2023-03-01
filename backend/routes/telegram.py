@@ -9,23 +9,23 @@ from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_storage import StateMemoryStorage
 from utils.calendar import Calendar, CallbackFactory
-from utils.handlers import (
-    process_add_medical_condition,
-    process_add_medical_condition_description,
+from utils.form import (
     process_address,
-    process_cancel,
-    process_check_in,
-    process_check_out,
     process_date_of_birth,
     process_gender,
     process_language,
-    process_list_medical_conditions,
-    process_location,
     process_name,
     process_nric,
     process_onboard,
     process_phone_number,
-    process_profile,
+    process_welcome_message,
+)
+from utils.handlers import process_cancel, process_profile, process_welcome_message
+from utils.location import process_check_in, process_check_out, process_location
+from utils.medical import (
+    process_add_medical_condition,
+    process_add_medical_condition_description,
+    process_list_medical_conditions,
     process_skip_description,
     process_welcome_message,
 )
