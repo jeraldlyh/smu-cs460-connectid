@@ -14,10 +14,13 @@ from utils.handlers import (
     process_add_medical_condition_description,
     process_address,
     process_cancel,
+    process_check_in,
+    process_check_out,
     process_date_of_birth,
     process_gender,
     process_language,
     process_list_medical_conditions,
+    process_location,
     process_name,
     process_nric,
     process_onboard,
@@ -60,10 +63,7 @@ async def callback_handler(call: types.CallbackQuery) -> None:
 
     match action:
         case "onboard":
-            try:
-                await process_onboard(bot=bot, database=database, callback=call)
-            except:
-                pass
+            await process_onboard(bot=bot, database=database, callback=call)
         case "language":
             await process_language(
                 bot=bot, database=database, callback=call, languages=[callback_data[1]]
@@ -84,7 +84,6 @@ async def callback_handler(call: types.CallbackQuery) -> None:
             await process_profile(bot=bot, database=database, callback=call)
         case "option":
             option = callback_data[1]
-            print(callback_data)
 
             match option:
                 case "add":
@@ -108,6 +107,14 @@ async def callback_handler(call: types.CallbackQuery) -> None:
                     )
         case "cancel":
             await process_cancel(bot=bot, callback=call)
+        case "check_in":
+            await process_check_in(bot=bot, database=database, callback=call)
+        case "check_out":
+            await process_check_out(
+                bot=bot,
+                database=database,
+                callback=call,
+            )
 
 
 @bot.message_handler(commands=["start"])
@@ -116,11 +123,17 @@ async def welcome_message(message: types.Message) -> None:
     await process_welcome_message(bot=bot, database=database, message=message)
 
 
+@bot.message_handler(func=lambda message: True, content_types=["location"])
+async def location_handler(message: types.Message) -> None:
+    database = Firestore()
+    await process_location(bot=bot, database=database, message=message)
+    await bot.delete_message(chat_id=message.chat.id, message_id=message.id)
+
+
 @bot.message_handler(func=lambda message: True)
 async def message_handler(message: types.Message):
     if not message.text or message.from_user.is_bot:
         return
-
     if not message.text.startswith("/"):
         database = Firestore()
         responder = await database.get_responder(message.from_user.id)

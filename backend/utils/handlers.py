@@ -29,16 +29,16 @@ async def process_welcome_message(
     bot: AsyncTeleBot,
     message: types.Message | int,
     is_edit=False,
+    is_delete=False,
     database: Optional[Firestore] = None,
     chat_id: Optional[int] = None,
 ) -> None:
     is_onboarded = True
 
     try:
-        await cast(Firestore, database).get_responder(
-            cast(types.Message, message).from_user.id
-        )
-    except:
+        if database:
+            await database.get_responder(cast(types.Message, message).chat.id)
+    except Exception:
         is_onboarded = False
 
     onboard_button = types.InlineKeyboardButton(
@@ -59,8 +59,8 @@ async def process_welcome_message(
     keyboard.add(profile_button)
     keyboard.add(check_in_button, check_out_button, row_width=2)
 
-    if is_edit:
-        is_integer = isinstance(message, int)
+    is_integer = isinstance(message, int)
+    if is_edit and not is_delete:
         await bot.edit_message_text(
             chat_id=chat_id if is_integer else message.chat.id,
             message_id=message if is_integer else message.id,
@@ -68,12 +68,21 @@ async def process_welcome_message(
             reply_markup=keyboard,
         )
         return
-    if database:
-        message = await bot.send_message(
-            chat_id=cast(types.Message, message).chat.id,
-            text="Welcome to ConnectID, below are a list of actions available.",
-            reply_markup=keyboard,
+
+    # Special case to handle for location updates, need to delete normal message without inline keyboard
+    # else unable to edit the mssage
+    if is_delete:
+        await bot.delete_message(
+            chat_id=cast(int, chat_id) if is_integer else message.chat.id,
+            message_id=message if is_integer else message.id,
         )
+
+    message = await bot.send_message(
+        chat_id=cast(int, chat_id) if is_integer else message.chat.id,
+        text="Welcome to ConnectID, below are a list of actions available.",
+        reply_markup=keyboard,
+    )
+    if database:
         await database.update_latest_bot_message(message.chat.id, message.id)
 
 
@@ -380,7 +389,6 @@ async def process_list_medical_conditions(
             MEDICAL_CONDITIONS,
         )
     )
-    print(options, existing_experience, len(options))
 
     if len(options) == 0:
         message = await bot.send_message(
@@ -482,3 +490,73 @@ async def process_add_medical_condition_description(
         bot=bot, message=responder.message_id, chat_id=message.chat.id, is_edit=True
     )
     return True
+
+
+def _get_check_in_out_message(check_in=True):
+    return f"You have successfully checked {'in' if check_in else 'out'}. You'll{'' if check_in else ' not'} receive any notifications if a distress signal is issued in the vicinity."
+
+
+async def process_check_in(
+    bot: AsyncTeleBot, database: Firestore, callback: types.CallbackQuery
+) -> None:
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    button = types.KeyboardButton(text="Send location", request_location=True)
+    markup.add(button)
+    await bot.delete_message(
+        chat_id=callback.message.chat.id, message_id=callback.message.id
+    )
+    message = await bot.send_message(
+        chat_id=callback.message.chat.id,
+        text="❗ Click on the button below to send your location",
+        reply_markup=markup,
+    )
+    print(message.id)
+
+    responder = await database.get_responder(callback.message.chat.id)
+    responder.message_id = message.id
+    await database.update_responder(responder)
+
+
+async def process_check_out(
+    bot: AsyncTeleBot, database: Firestore, callback: types.CallbackQuery
+) -> None:
+    responder = await database.get_responder(callback.message.chat.id)
+
+    responder.is_available = False
+    await database.update_responder(responder)
+
+    notification = await bot.send_message(
+        chat_id=callback.message.chat.id,
+        text=_get_check_in_out_message(False),
+    )
+    await asyncio.sleep(3)
+    await bot.delete_message(
+        chat_id=callback.message.chat.id, message_id=notification.id
+    )
+
+
+async def process_location(
+    bot: AsyncTeleBot, database: Firestore, message: types.Message
+) -> None:
+    responder = await database.get_responder(message.chat.id)
+
+    responder.is_available = True
+    responder.location = {
+        "longitude": cast(types.Location, message.location).longitude,
+        "latitude": cast(types.Location, message.location).latitude,
+    }
+    await database.update_responder(responder)
+
+    notification = await bot.send_message(
+        chat_id=message.chat.id,
+        text=_get_check_in_out_message(),
+    )
+    await asyncio.sleep(3)
+    await bot.delete_message(chat_id=message.chat.id, message_id=notification.id)
+    await process_welcome_message(
+        bot=bot,
+        message=responder.message_id,
+        is_edit=True,
+        chat_id=message.chat.id,
+        is_delete=True,
+    )
