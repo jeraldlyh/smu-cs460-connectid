@@ -2,6 +2,7 @@ import asyncio
 from typing import cast
 
 from database import Firestore
+from database.models import Location
 from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 
@@ -63,10 +64,10 @@ async def process_location(
     responder = await database.get_responder(message.chat.id)
 
     responder.is_available = True
-    responder.location = {
-        "longitude": cast(types.Location, message.location).longitude,
-        "latitude": cast(types.Location, message.location).latitude,
-    }
+    responder.location = Location(
+        longitude=cast(types.Location, message.location).longitude,
+        latitude=cast(types.Location, message.location).latitude,
+    )
     await database.update_responder(responder)
 
     notification = await bot.send_message(

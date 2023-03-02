@@ -32,23 +32,22 @@ async def request_help():
 
     for responder in responders:
         if responder.is_available:
-            responder_latitude = int(responder.location.get("latitude", 0))
-            responder_longitude = int(responder.location.get("longitude", 0))
-
-            latitude = abs(pwid_latitude - responder_latitude)
-            longitude = abs(pwid_longitude - responder_longitude)
+            latitude = abs(pwid_latitude - responder.location.latitude)
+            longitude = abs(pwid_longitude - responder.location.longitude)
             intersections = set(
                 _get_list_of_existing_experience(responder)
             ).intersection(pwid.medical_conditions)
             matches_language_preference = (
                 pwid.language_preference in responder.languages
             )
+            matches_gender_preference = pwid.gender_preference == responder.gender
 
             if (
                 latitude < smallest_latitude
                 and longitude < smallest_longitude
                 and len(intersections) > largest_intersection
                 and matches_language_preference
+                and matches_gender_preference
             ):
                 available_responder = responder
 

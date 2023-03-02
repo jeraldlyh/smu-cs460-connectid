@@ -32,23 +32,23 @@ class ExistingMedicalKnowledge:
         return str(vars(self))
 
 
-# class Location:
-#     def __init__(self, longitude: int, latitude: int) -> None:
-#         self.longitude = longitude
-#         self.latitude = latitude
+class Location:
+    def __init__(self, longitude: float, latitude: float) -> None:
+        self.longitude = longitude
+        self.latitude = latitude
 
-#     @staticmethod
-#     def from_dict(source):
-#         return Location(
-#             source["longitude"],
-#             source["latitude"],
-#         )
+    @staticmethod
+    def from_dict(source):
+        return Location(
+            source["longitude"],
+            source["latitude"],
+        )
 
-#     def to_dict(self):
-#         return {
-#             "longitude": self.longitude,
-#             "latitude": self.latitude,
-#         }
+    def to_dict(self):
+        return {
+            "longitude": self.longitude,
+            "latitude": self.latitude,
+        }
 
 
 # class EmergencyContact:
@@ -160,7 +160,7 @@ class Responder:
         self,
         id: str,
         telegram_id: int,
-        location: Dict[str, float],
+        location: Location,
         name: str = "",
         languages: List[str] = [],
         phone_number: str = "",
@@ -193,7 +193,7 @@ class Responder:
         return Responder(
             id=source["id"],
             telegram_id=source["telegram_id"],
-            location=source["location"],
+            location=Location.from_dict(source["location"]),
             name=source["name"],
             languages=source["languages"],
             phone_number=source["phone_number"],
@@ -224,7 +224,7 @@ class Responder:
             "existing_medical_knowledge": [
                 x.to_dict() for x in self.existing_medical_knowledge
             ],
-            "location": self.location,
+            "location": self.location.to_dict(),
             "is_available": self.is_available,
             "state": self.state.value,
             "message_id": self.message_id,

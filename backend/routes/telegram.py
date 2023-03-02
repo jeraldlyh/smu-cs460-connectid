@@ -80,7 +80,7 @@ async def callback_handler(call: types.CallbackQuery) -> None:
             )
         case "gender":
             await process_gender(
-                bot=bot, database=database, callback=call, gender=callback_data[1]
+                bot=bot, database=database, callback=call, gender=callback_data[2]
             )
         case "profile":
             await process_profile(bot=bot, database=database, callback=call)
@@ -150,7 +150,15 @@ async def message_handler(message: types.Message):
         return
     if not message.text.startswith("/"):
         database = Firestore()
-        responder = await database.get_responder(message.from_user.id)
+
+        # Ignore messages sent by users that have yet to onboard
+        try:
+            responder = await database.get_responder(message.from_user.id)
+        except:
+            return await bot.delete_message(
+                chat_id=message.chat.id, message_id=message.id
+            )
+
         has_error = False
         is_text_required_completed = False
 

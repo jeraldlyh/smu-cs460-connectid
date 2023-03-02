@@ -105,6 +105,7 @@ async def process_profile(
     text = "<b>📖  Profile</b>\n\n"
     text += f"<b>Name</b>: <i>{responder.name}</i>\n"
     text += f"<b>Gender</b>: <i>{responder.gender}</i>\n"
+    text += f"<b>Language(s)</b>: <i>{', '.join(responder.languages)}</i>\n"
     text += f"<b>Date of Birth</b>: <i>{responder.date_of_birth}</i>\n"
     text += f"<b>NRIC</b>: <i>{responder.nric}</i>\n"
     text += f"<b>Phone Number</b>: <i>{responder.phone_number}</i>\n"

@@ -15,6 +15,10 @@ MEDICAL_CONDITIONS = [
     "Developmental delay",
     "Prader-Willi Syndrome (PWS)",
     "Fetal alcohol spectrum disorder (FASD)",
+    "Autism",
+    "Anxiety",
+    "ADHD",
+    "Personality disorder",
 ]
 
 

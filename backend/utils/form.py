@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List
 
 from database import Firestore
-from database.models import CustomStates, Responder
+from database.models import CustomStates, Location, Responder
 from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 
@@ -21,7 +21,7 @@ async def process_onboard(
     bot: AsyncTeleBot, database: Firestore, callback: types.CallbackQuery
 ) -> None:
     # User might not have granted location permissions
-    latitude, longitude = 0, 0
+    latitude, longitude = 0.0, 0.0
     if callback.message.location:
         latitude = callback.message.location.latitude
         longitude = callback.message.location.longitude
@@ -31,10 +31,7 @@ async def process_onboard(
         name=callback.from_user.full_name,
         telegram_id=callback.from_user.id,
         state=CustomStates.NAME,
-        location={
-            "latitude": latitude,
-            "longitude": longitude,
-        },
+        location=Location(longitude=longitude, latitude=latitude),
     )
 
     text = format_form_text(responder, "Kindly enter your full name")
@@ -56,7 +53,7 @@ async def process_name(
 
     responder.name = message.text
     responder.state = _retrieve_next_state(responder)
-    languages = ["Chinese", "English", "Malay"]
+    languages = ["Chinese", "English", "Malay", "Cantonese", "Tamil"]
     keyboard = types.InlineKeyboardMarkup()
     buttons = [
         types.InlineKeyboardButton(
@@ -86,7 +83,7 @@ async def process_language(
     # Handle language selection
     responder = await database.get_responder(callback.from_user.id)
     # TODO - allow multiple languages
-    responder.languages = languages
+    responder.languages = [x.capitalize() for x in languages]
     responder.state = _retrieve_next_state(responder)
     await database.update_responder(responder)
 
@@ -111,7 +108,7 @@ async def process_phone_number(
     responder.state = _retrieve_next_state(responder)
 
     # Proceed to next step
-    text = format_form_text(responder, "Kindly provide your NRIC (last 3 digits)")
+    text = format_form_text(responder, "Kindly provide your NRIC (last 4 digits)")
     response = await bot.edit_message_text(
         chat_id=message.chat.id,
         message_id=responder.message_id,
@@ -232,7 +229,7 @@ async def process_gender(
     # Handles gender selection
     responder = await database.get_responder(callback.from_user.id)
     message_id = responder.message_id
-    responder.gender = gender
+    responder.gender = gender.capitalize()
 
     # Proceeds to next step
     text = format_form_text(
