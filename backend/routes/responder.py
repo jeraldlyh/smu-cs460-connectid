@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from database import Firestore
 from database.models import CustomStates, Responder
@@ -23,6 +24,9 @@ async def create_responder() -> Response:
     payload["id"] = str(uuid.uuid4())
     payload["is_available"] = True
     payload["state"] = CustomStates.ONBOARD
+    for x in payload["existing_medical_knowledge"]:
+        x["created_at"] = str(datetime.now())
+    payload["message_id"] = -1
     responder = Responder.from_dict(payload)
 
     database = Firestore()

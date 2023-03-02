@@ -1,3 +1,5 @@
+import uuid
+
 from database import Firestore
 from database.errors import NotFoundException
 from database.models import PWID, Responder
@@ -19,6 +21,7 @@ async def create_pwid() -> Response:
         return jsonify("Missing request body")
 
     payload = request.get_json()
+    payload["id"] = str(uuid.uuid4())
     pwid = PWID.from_dict(payload)
 
     database = Firestore()
