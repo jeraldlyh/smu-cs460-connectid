@@ -25,7 +25,9 @@ from utils.location import process_check_in, process_check_out, process_location
 from utils.medical import (
     process_add_medical_condition,
     process_add_medical_condition_description,
+    process_list_existing_medical_condition,
     process_list_medical_conditions,
+    process_remove_medical_condition,
     process_skip_description,
     process_welcome_message,
 )
@@ -100,7 +102,18 @@ async def callback_handler(call: types.CallbackQuery) -> None:
                             bot=bot, database=database, callback=call
                         )
                 case "remove":
-                    pass
+                    if len(callback_data) > 2:
+                        condition = " ".join(callback_data[2:])
+                        await process_remove_medical_condition(
+                            bot=bot,
+                            database=database,
+                            callback=call,
+                            condition=condition,
+                        )
+                    else:
+                        await process_list_existing_medical_condition(
+                            bot=bot, database=database, callback=call
+                        )
                 case "skip":
                     await process_skip_description(
                         bot=bot, database=database, callback=call

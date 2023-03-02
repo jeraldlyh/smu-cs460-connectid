@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime
+from typing import List
 
 from database import Firestore
 from database.models import CustomStates, Responder
@@ -17,15 +18,19 @@ MEDICAL_CONDITIONS = [
 ]
 
 
-async def process_list_medical_conditions(
-    bot: AsyncTeleBot, database: Firestore, callback: types.CallbackQuery
-) -> None:
-    responder = await database.get_responder(callback.from_user.id)
-    existing_experience = (
+def _get_list_of_existing_experience(responder: Responder) -> List[str]:
+    return (
         [condition["name"] for condition in responder.existing_medical_knowledge]
         if len(responder.existing_medical_knowledge) != 0
         else []
     )
+
+
+async def process_list_medical_conditions(
+    bot: AsyncTeleBot, database: Firestore, callback: types.CallbackQuery
+) -> None:
+    responder = await database.get_responder(callback.from_user.id)
+    existing_experience = _get_list_of_existing_experience(responder)
 
     keyboard = types.InlineKeyboardMarkup()
     options = list(
@@ -122,6 +127,7 @@ async def process_add_medical_condition_description(
         "description": message.text,
     }
     responder.existing_medical_knowledge = sorted_medical_conditions
+    responder.state = CustomStates.NOOP
 
     await bot.edit_message_text(
         chat_id=message.chat.id,
@@ -135,3 +141,68 @@ async def process_add_medical_condition_description(
         bot=bot, message=responder.message_id, chat_id=message.chat.id, is_edit=True
     )
     return True
+
+
+async def process_list_existing_medical_condition(
+    bot: AsyncTeleBot, database: Firestore, callback: types.CallbackQuery
+) -> None:
+    responder = await database.get_responder(callback.from_user.id)
+    existing_experience = _get_list_of_existing_experience(responder)
+
+    if len(existing_experience) == 0:
+        notification = await bot.send_message(
+            chat_id=callback.message.chat.id, text="You do not any medical experiences."
+        )
+        await asyncio.sleep(3)
+        await bot.delete_message(
+            chat_id=callback.message.chat.id, message_id=notification.id
+        )
+        return
+
+    keyboard = types.InlineKeyboardMarkup()
+    buttons = [
+        types.InlineKeyboardButton(option, callback_data=f"option remove {option}")
+        for option in existing_experience
+    ]
+    keyboard.add(*buttons, row_width=2)
+    keyboard.add(CANCEL_BUTTON)
+
+    await bot.edit_message_text(
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.id,
+        text=(f"Kindly choose the medical condition that you wish to remove."),
+        reply_markup=keyboard,
+    )
+
+
+async def process_remove_medical_condition(
+    bot: AsyncTeleBot,
+    database: Firestore,
+    callback: types.CallbackQuery,
+    condition: str,
+) -> None:
+    responder = await database.get_responder(callback.from_user.id)
+    responder.existing_medical_knowledge = list(
+        filter(
+            lambda x: x["name"] != condition,
+            responder.existing_medical_knowledge,
+        )
+    )
+
+    await database.update_responder(responder)
+
+    await bot.edit_message_text(
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.id,
+        text=(
+            f"You have successfully removed <b>{condition}</b> from your experiences."
+        ),
+        parse_mode="HTML",
+    )
+    await asyncio.sleep(3)
+    await process_welcome_message(
+        bot=bot,
+        message=callback.message.id,
+        chat_id=callback.message.chat.id,
+        is_edit=True,
+    )

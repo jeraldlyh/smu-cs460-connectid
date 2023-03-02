@@ -15,15 +15,23 @@ async def process_welcome_message(
     is_delete=False,
     database: Optional[Firestore] = None,
     chat_id: Optional[int] = None,
+    responder_id: Optional[int] = None,
 ) -> None:
     is_onboarded = True
+    responder = None
+    is_integer = isinstance(message, int)
 
     try:
         if database:
-            await database.get_responder(cast(types.Message, message).chat.id)
+            responder = await database.get_responder(
+                responder_id
+                if responder_id is not None
+                else cast(types.Message, message).chat.id
+            )
     except Exception:
         is_onboarded = False
 
+    keyboard = types.InlineKeyboardMarkup()
     onboard_button = types.InlineKeyboardButton(
         text="📝 Onboard", callback_data="onboard"
     )
@@ -36,13 +44,21 @@ async def process_welcome_message(
     profile_button = types.InlineKeyboardButton(
         text="📖 Profile", callback_data="profile"
     )
-    keyboard = types.InlineKeyboardMarkup()
+
+    # Conditionally render onboard button
     if not is_onboarded:
         keyboard.add(onboard_button)
     keyboard.add(profile_button)
-    keyboard.add(check_in_button, check_out_button, row_width=2)
 
-    is_integer = isinstance(message, int)
+    # Dynamically render check-in/out button based on availability
+    if is_onboarded and responder is not None:
+        if responder.is_available:
+            keyboard.add(check_out_button)
+        else:
+            keyboard.add(check_in_button)
+    else:
+        keyboard.add(check_in_button)
+
     if is_edit and not is_delete:
         await bot.edit_message_text(
             chat_id=chat_id if is_integer else message.chat.id,
@@ -75,17 +91,17 @@ async def process_profile(
     responder = await database.get_responder(callback.from_user.id)
 
     text = "<b>📖  Profile</b>\n\n"
-    text += f"<b>Name</b>: {responder.name}\n"
-    text += f"<b>Gender</b>: {responder.gender}\n"
-    text += f"<b>Date of Birth</b>: {responder.date_of_birth}\n"
-    text += f"<b>NRIC</b>: {responder.nric}\n"
-    text += f"<b>Phone Number</b>: {responder.phone_number}\n"
-    text += f"<b>Address</b>: {responder.address}\n"
+    text += f"<b>Name</b>: <i>{responder.name}</i>\n"
+    text += f"<b>Gender</b>: <i>{responder.gender}</i>\n"
+    text += f"<b>Date of Birth</b>: <i>{responder.date_of_birth}</i>\n"
+    text += f"<b>NRIC</b>: <i>{responder.nric}</i>\n"
+    text += f"<b>Phone Number</b>: <i>{responder.phone_number}</i>\n"
+    text += f"<b>Address</b>: <i>{responder.address}</i>\n"
     text += f"<b>Medical Knowledge</b>"
 
     # Handle inexperienced responders
     if len(responder.existing_medical_knowledge) == 0:
-        text += "None"
+        text += ": <i>None</i>"
     else:
         text += "\n"
 

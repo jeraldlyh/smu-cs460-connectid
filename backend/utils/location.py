@@ -48,6 +48,9 @@ async def process_check_out(
     await bot.delete_message(
         chat_id=callback.message.chat.id, message_id=notification.id
     )
+    await process_welcome_message(
+        bot=bot, message=callback.message, is_edit=True, database=database
+    )
 
 
 async def process_location(
@@ -71,7 +74,9 @@ async def process_location(
     await process_welcome_message(
         bot=bot,
         message=responder.message_id,
+        database=database,
         is_edit=True,
         chat_id=message.chat.id,
         is_delete=True,
+        responder_id=responder.telegram_id,
     )
