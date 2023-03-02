@@ -169,7 +169,7 @@ class Responder:
         date_of_birth: str = "",
         gender: str = "",
         existing_medical_knowledge: List[ExistingMedicalKnowledge] = [],
-        is_available: bool = True,
+        is_available: bool = False,
         state: CustomStates = CustomStates.ONBOARD,
         message_id: int = -1,  # Used to keep track of last message sent by bot
     ) -> None:

@@ -133,6 +133,7 @@ async def callback_handler(call: types.CallbackQuery) -> None:
 @bot.message_handler(commands=["start"])
 async def welcome_message(message: types.Message) -> None:
     database = Firestore()
+    await bot.delete_message(chat_id=message.chat.id, message_id=message.id)
     await process_welcome_message(bot=bot, database=database, message=message)
 
 

@@ -31,6 +31,10 @@ async def process_welcome_message(
     except Exception:
         is_onboarded = False
 
+    # Ignore repeated /start commands
+    if is_onboarded and responder is not None and responder.message_id != -1:
+        return
+
     keyboard = types.InlineKeyboardMarkup()
     onboard_button = types.InlineKeyboardButton(
         text="📝 Onboard", callback_data="onboard"
@@ -46,18 +50,19 @@ async def process_welcome_message(
     )
 
     # Conditionally render onboard button
-    if not is_onboarded:
-        keyboard.add(onboard_button)
-    keyboard.add(profile_button)
+    if is_onboarded:
+        keyboard.add(profile_button)
 
-    # Dynamically render check-in/out button based on availability
-    if is_onboarded and responder is not None:
-        if responder.is_available:
-            keyboard.add(check_out_button)
+        # Dynamically render check-in/out button based on availability
+        if responder is not None:
+            if responder.is_available:
+                keyboard.add(check_out_button)
+            else:
+                keyboard.add(check_in_button)
         else:
             keyboard.add(check_in_button)
     else:
-        keyboard.add(check_in_button)
+        keyboard.add(onboard_button)
 
     if is_edit and not is_delete:
         await bot.edit_message_text(
@@ -81,7 +86,8 @@ async def process_welcome_message(
         text="Welcome to ConnectID, below are a list of actions available.",
         reply_markup=keyboard,
     )
-    if database:
+
+    if database and responder is not None:
         await database.update_latest_bot_message(message.chat.id, message.id)
 
 

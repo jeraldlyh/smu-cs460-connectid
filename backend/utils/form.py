@@ -36,13 +36,16 @@ async def process_onboard(
             "longitude": longitude,
         },
     )
-    await database.create_responder(responder)
 
     text = format_form_text(responder, "Kindly enter your full name")
-    message = await bot.send_message(
-        chat_id=callback.message.chat.id, text=text, parse_mode="HTML"
+    await bot.edit_message_text(
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.id,
+        text=text,
+        parse_mode="HTML",
     )
-    await database.update_latest_bot_message(responder, message.id)
+    responder.message_id = callback.message.id
+    await database.create_responder(responder)
 
 
 async def process_name(
@@ -108,7 +111,7 @@ async def process_phone_number(
     responder.state = _retrieve_next_state(responder)
 
     # Proceed to next step
-    text = format_form_text(responder, "Kindly provide your NRIC")
+    text = format_form_text(responder, "Kindly provide your NRIC (last 3 digits)")
     response = await bot.edit_message_text(
         chat_id=message.chat.id,
         message_id=responder.message_id,
