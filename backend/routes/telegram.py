@@ -119,7 +119,7 @@ async def callback_handler(call: types.CallbackQuery) -> None:
                         bot=bot, database=database, callback=call
                     )
         case "cancel":
-            await process_cancel(bot=bot, callback=call)
+            await process_cancel(bot=bot, database=database, callback=call)
         case "check_in":
             await process_check_in(bot=bot, database=database, callback=call)
         case "check_out":
@@ -133,8 +133,8 @@ async def callback_handler(call: types.CallbackQuery) -> None:
 @bot.message_handler(commands=["start"])
 async def welcome_message(message: types.Message) -> None:
     database = Firestore()
-    await bot.delete_message(chat_id=message.chat.id, message_id=message.id)
     await process_welcome_message(bot=bot, database=database, message=message)
+    await bot.delete_message(chat_id=message.chat.id, message_id=message.id)
 
 
 @bot.message_handler(func=lambda message: True, content_types=["location"])

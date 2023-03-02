@@ -75,8 +75,8 @@ async def process_location(
         bot=bot,
         message=responder.message_id,
         database=database,
-        is_edit=True,
         chat_id=message.chat.id,
+        is_edit=True,
         is_delete=True,
         responder_id=responder.telegram_id,
     )

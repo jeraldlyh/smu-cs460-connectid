@@ -32,7 +32,13 @@ async def process_welcome_message(
         is_onboarded = False
 
     # Ignore repeated /start commands
-    if is_onboarded and responder is not None and responder.message_id != -1:
+    if (
+        is_onboarded
+        and responder is not None
+        and responder.message_id != -1
+        and not is_integer
+        and message.text == "/start"
+    ):
         return
 
     keyboard = types.InlineKeyboardMarkup()
@@ -139,5 +145,9 @@ async def process_profile(
     )
 
 
-async def process_cancel(bot: AsyncTeleBot, callback: types.CallbackQuery) -> None:
-    await process_welcome_message(bot=bot, message=callback.message, is_edit=True)
+async def process_cancel(
+    bot: AsyncTeleBot, database: Firestore, callback: types.CallbackQuery
+) -> None:
+    await process_welcome_message(
+        bot=bot, database=database, message=callback.message, is_edit=True
+    )
