@@ -1,5 +1,6 @@
 import os
 import sys
+import uuid
 from typing import Optional, Tuple
 
 import requests
@@ -9,6 +10,7 @@ from flask import jsonify, request
 from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 from utils.medical import _get_list_of_existing_experience
+from utils.url import _get_google_maps_link
 
 from routes import app
 from routes.telegram import bot
@@ -38,19 +40,18 @@ def _get_location_of_ip_address(ip_address: str) -> Tuple[Location, str]:
     )
 
 
-def _get_google_maps_link(address: str) -> str:
-    zip_code = address.split(", ")[1]
-    return f"https://www.google.com/maps/search/?api=1&query={zip_code}&zoom=20"
-
-
 async def _create_distress(
     database: Firestore,
     location: str,
     pwid: PWID,
     responder: Optional[Responder] = None,
-) -> None:
-    distress = Distress(location=location, pwid=pwid, responder=responder)
+) -> str:
+    distress = Distress(
+        id=str(uuid.uuid4()), location=location, pwid=pwid, responder=responder
+    )
     await database.create_distress(distress)
+
+    return distress.id
 
 
 @app.route("/sos", methods=["GET"])
@@ -108,7 +109,7 @@ async def request_help():
         # TODO: blast out telegram message
         return jsonify("Unable to find an available responder right now"), 400
 
-    await _create_distress(
+    distress_id = await _create_distress(
         database=database, location=address, pwid=pwid, responder=available_responder
     )
 
@@ -117,22 +118,20 @@ async def request_help():
         responder=available_responder,
         pwid=pwid,
         address=address,
+        distress_id=distress_id,
     )
     return jsonify(f"{available_responder.name} will be attending to {pwid.name}")
 
 
 async def process_notify_responder(
-    bot: AsyncTeleBot,
-    responder: Responder,
-    pwid: PWID,
-    address: str,
+    bot: AsyncTeleBot, responder: Responder, pwid: PWID, address: str, distress_id: str
 ) -> None:
     keyboard = types.InlineKeyboardMarkup()
     accept = types.InlineKeyboardButton(
-        text="✅ Accept", callback_data="distress accept"
+        text="✅ Accept", callback_data=f"distress accept {distress_id}"
     )
     decline = types.InlineKeyboardButton(
-        text="❌ Decline", callback_data="distress decline"
+        text="❌ Decline", callback_data=f"distress decline {distress_id}"
     )
     keyboard.add(accept, decline, row_width=2)
 

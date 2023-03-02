@@ -159,6 +159,22 @@ class PWID:
         return str(vars(self))
 
 
+class Acknowledgement:
+    def __init__(self, name: str, location: str) -> None:
+        self.name = name
+        self.location = location
+
+    @staticmethod
+    def from_dict(source):
+        return Acknowledgement(name=source["name"], location=source["location"])
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "location": self.location,
+        }
+
+
 class Responder:
     def __init__(
         self,
@@ -176,6 +192,7 @@ class Responder:
         is_available: bool = False,
         state: CustomStates = CustomStates.ONBOARD,
         message_id: int = -1,  # Used to keep track of last message sent by bot
+        distress_signals: List[Acknowledgement] = [],
     ) -> None:
         self.id = id
         self.telegram_id = telegram_id
@@ -191,6 +208,7 @@ class Responder:
         self.is_available = is_available
         self.state = state
         self.message_id = message_id
+        self.distress_signals = distress_signals
 
     @staticmethod
     def from_dict(source):
@@ -212,6 +230,9 @@ class Responder:
             is_available=source["is_available"],
             state=CustomStates(source["state"]),
             message_id=source["message_id"],
+            distress_signals=[
+                Acknowledgement.from_dict(x) for x in source["distress_signals"]
+            ],
         )
 
     def to_dict(self):
@@ -232,6 +253,7 @@ class Responder:
             "is_available": self.is_available,
             "state": self.state.value,
             "message_id": self.message_id,
+            "distress_signals": [x.to_dict() for x in self.distress_signals],
         }
 
     def __repr__(self) -> str:
@@ -241,28 +263,48 @@ class Responder:
 class Distress:
     def __init__(
         self,
+        id: str,
         location: str,
         pwid: PWID,
         responder: Optional[Responder] = None,
+        created_at: str = str(datetime.now()),
+        acknowledged_at: str = "",
+        is_manual: bool = False,
+        is_acknowledged: bool = False,
     ) -> None:
         self.location = location
         self.pwid = pwid
         self.responder = responder
-        self.created_at = str(datetime.now())
-        self.is_manual = False
+        self.created_at = created_at
+        self.acknowledged_at = acknowledged_at
+        self.is_manual = is_manual
+        self.is_acknowledged = is_acknowledged
+        self.id = id
 
     @staticmethod
     def from_dict(source):
         return Distress(
+            id=source["id"],
             location=source["location"],
             pwid=PWID.from_dict(source["pwid"]),
             responder=Responder.from_dict(source["responder"]),
+            created_at=source["created_at"],
+            acknowledged_at=source["acknowledged_at"],
+            is_manual=source["is_manual"],
+            is_acknowledged=source["is_acknowledged"],
         )
 
     def to_dict(self):
         return {
+            "id": self.id,
             "location": self.location,
             "pwid": self.pwid.to_dict(),
             "responder": self.responder.to_dict() if self.responder else {},
             "created_at": self.created_at,
+            "acknowledged_at": self.acknowledged_at,
+            "is_manual": self.is_manual,
+            "is_acknowledged": self.is_acknowledged,
         }
+
+    def __repr__(self) -> str:
+        return str(vars(self))

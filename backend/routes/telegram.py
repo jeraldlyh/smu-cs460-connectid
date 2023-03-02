@@ -31,6 +31,7 @@ from utils.medical import (
     process_skip_description,
     process_welcome_message,
 )
+from utils.sos import process_acknowledge_distress
 
 from routes import app
 
@@ -128,6 +129,17 @@ async def callback_handler(call: types.CallbackQuery) -> None:
                 database=database,
                 callback=call,
             )
+        case "distress":
+            option = callback_data[1]
+            distress_id = callback_data[2]
+            print(callback_data)
+
+            if option == "accept":
+                await process_acknowledge_distress(
+                    bot=bot, database=database, callback=call, distress_id=distress_id
+                )
+            else:
+                pass
 
 
 @bot.message_handler(commands=["start"])
