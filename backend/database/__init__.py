@@ -1,9 +1,10 @@
+import uuid
 from typing import List
 
 from firebase_admin.firestore import firestore
 
 from database.errors import AlreadyExistsException, NotFoundException
-from database.models import PWID, Responder
+from database.models import PWID, Distress, Responder
 from database.singleton import SingletonClass
 
 
@@ -12,6 +13,7 @@ class Firestore(SingletonClass):
         self.db = firestore.AsyncClient()
         self.RESPONDER_COLLECTION = "responder"
         self.PWID_COLLECTION = "pwid"
+        self.DISTRESS_COLLECTION = "distress"
 
     def _validate_doc(
         self, doc: firestore.DocumentSnapshot, message: str, abort_if_created=False
@@ -89,3 +91,10 @@ class Firestore(SingletonClass):
         responder = await self.get_responder(data.telegram_id)
 
         return responder.message_id
+
+    def _get_distress_ref(self, doc_id: str) -> firestore.AsyncDocumentReference:
+        return self.db.collection(self.DISTRESS_COLLECTION).document(doc_id)
+
+    async def create_distress(self, data: Distress) -> None:
+        doc_ref = self._get_distress_ref(str(uuid.uuid4()))
+        await doc_ref.set(data.to_dict())

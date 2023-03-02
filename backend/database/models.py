@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional
 
@@ -33,21 +34,24 @@ class ExistingMedicalKnowledge:
 
 
 class Location:
-    def __init__(self, longitude: float, latitude: float) -> None:
+    def __init__(self, longitude: float, latitude: float, address: str = "") -> None:
         self.longitude = longitude
         self.latitude = latitude
+        self.address = address
 
     @staticmethod
     def from_dict(source):
         return Location(
-            source["longitude"],
-            source["latitude"],
+            longitude=source["longitude"],
+            latitude=source["latitude"],
+            address=source["address"] if "address" in source else "",
         )
 
     def to_dict(self):
         return {
             "longitude": self.longitude,
             "latitude": self.latitude,
+            "address": self.address,
         }
 
 
@@ -103,7 +107,7 @@ class PWID:
         gender: str,
         gender_preference: str,
         emergency_contacts: List[Dict[str, str]],
-        location: Dict[str, str],
+        location: Location,
     ) -> None:
         self.id = id
         self.name = name
@@ -132,7 +136,7 @@ class PWID:
             gender=source["gender"],
             gender_preference=source["gender_preference"],
             emergency_contacts=source["emergency_contacts"],
-            location=source["location"],
+            location=Location.from_dict(source["location"]),
         )
 
     def to_dict(self):
@@ -148,7 +152,7 @@ class PWID:
             "gender": self.gender,
             "gender_preference": self.gender_preference,
             "emergency_contacts": self.emergency_contacts,
-            "location": self.location,
+            "location": self.location.to_dict(),
         }
 
     def __repr__(self) -> str:
@@ -232,3 +236,33 @@ class Responder:
 
     def __repr__(self) -> str:
         return str(vars(self))
+
+
+class Distress:
+    def __init__(
+        self,
+        location: str,
+        pwid: PWID,
+        responder: Optional[Responder] = None,
+    ) -> None:
+        self.location = location
+        self.pwid = pwid
+        self.responder = responder
+        self.created_at = str(datetime.now())
+        self.is_manual = False
+
+    @staticmethod
+    def from_dict(source):
+        return Distress(
+            location=source["location"],
+            pwid=PWID.from_dict(source["pwid"]),
+            responder=Responder.from_dict(source["responder"]),
+        )
+
+    def to_dict(self):
+        return {
+            "location": self.location,
+            "pwid": self.pwid.to_dict(),
+            "responder": self.responder.to_dict() if self.responder else {},
+            "created_at": self.created_at,
+        }
