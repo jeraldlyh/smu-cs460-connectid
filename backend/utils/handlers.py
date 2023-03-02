@@ -74,7 +74,7 @@ async def process_welcome_message(
         await bot.edit_message_text(
             chat_id=chat_id if is_integer else message.chat.id,
             message_id=message if is_integer else message.id,
-            text="Welcome to ConnectID, below are a list of actions available.",
+            text="Welcome to ConnectID, below is a list of actions available.",
             reply_markup=keyboard,
         )
         return

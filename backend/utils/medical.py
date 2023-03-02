@@ -110,7 +110,9 @@ async def process_skip_description(
     )
 
     await asyncio.sleep(3)
-    await process_welcome_message(bot=bot, message=callback.message, is_edit=True)
+    await process_welcome_message(
+        bot=bot, database=database, message=callback.message, is_edit=True
+    )
 
 
 async def process_add_medical_condition_description(

@@ -15,9 +15,13 @@ def _get_check_in_out_message(check_in=True):
 async def process_check_in(
     bot: AsyncTeleBot, database: Firestore, callback: types.CallbackQuery
 ) -> None:
-    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-    button = types.KeyboardButton(text="Send location", request_location=True)
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+    button = types.KeyboardButton(
+        text="❗ Press here to send your location ❗", request_location=True
+    )
     markup.add(button)
+
+    # Have to delete InlineKeyboard message else not editable
     await bot.delete_message(
         chat_id=callback.message.chat.id, message_id=callback.message.id
     )
