@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List
 
 from database import Firestore
-from database.models import CustomStates, Responder
+from database.models import CustomStates, ExistingMedicalKnowledge, Responder
 from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 
@@ -20,7 +20,7 @@ MEDICAL_CONDITIONS = [
 
 def _get_list_of_existing_experience(responder: Responder) -> List[str]:
     return (
-        [condition["name"] for condition in responder.existing_medical_knowledge]
+        [experience.condition for experience in responder.existing_medical_knowledge]
         if len(responder.existing_medical_knowledge) != 0
         else []
     )
@@ -75,7 +75,7 @@ async def process_add_medical_condition(
     # Add a new condition
     responder = await database.get_responder(callback.from_user.id)
     responder.existing_medical_knowledge.append(
-        {"name": condition, "created_at": str(datetime.now())}
+        ExistingMedicalKnowledge(condition=condition, created_at=str(datetime.now()))
     )
     responder.state = CustomStates.EXISTING_MEDICAL_KNOWLEDGE
     await database.update_responder(responder)
@@ -118,14 +118,11 @@ async def process_add_medical_condition_description(
 ) -> bool:
     sorted_medical_conditions = sorted(
         responder.existing_medical_knowledge,
-        key=lambda x: x["created_at"],
+        key=lambda x: x.created_at,
         reverse=True,
     )
 
-    sorted_medical_conditions[0] = {
-        **sorted_medical_conditions[0],
-        "description": message.text,
-    }
+    sorted_medical_conditions[0].description = message.text
     responder.existing_medical_knowledge = sorted_medical_conditions
     responder.state = CustomStates.NOOP
 
@@ -133,7 +130,7 @@ async def process_add_medical_condition_description(
         chat_id=message.chat.id,
         message_id=responder.message_id,
         text=(
-            f"You have successfully added a description to {sorted_medical_conditions[0]['name']}."
+            f"You have successfully added a description to {sorted_medical_conditions[0].condition}."
         ),
     )
     await asyncio.sleep(3)
@@ -184,7 +181,7 @@ async def process_remove_medical_condition(
     responder = await database.get_responder(callback.from_user.id)
     responder.existing_medical_knowledge = list(
         filter(
-            lambda x: x["name"] != condition,
+            lambda x: x.condition != condition,
             responder.existing_medical_knowledge,
         )
     )

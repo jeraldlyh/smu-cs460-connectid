@@ -1,26 +1,35 @@
 from enum import Enum
-from typing import Dict, List
+from typing import Dict, List, Optional
 
-# class ExistingMedicalKnowledge:
-#     def __init__(self, medical_condition: str, description: str) -> None:
-#         self.medical_condition = medical_condition
-#         self.description = description
 
-#     @staticmethod
-#     def from_dict(source):
-#         return ExistingMedicalKnowledge(
-#             source["medical_condition"],
-#             source["description"],
-#         )
+class ExistingMedicalKnowledge:
+    def __init__(
+        self,
+        condition: str,
+        created_at: str,
+        description: Optional[str] = "",
+    ) -> None:
+        self.condition = condition
+        self.description = description
+        self.created_at = created_at
 
-#     def to_dict(self):
-#         return {
-#             "medical_condition": self.medical_condition,
-#             "description": self.description,
-#         }
+    @staticmethod
+    def from_dict(source):
+        return ExistingMedicalKnowledge(
+            condition=source["condition"],
+            created_at=source["created_at"],
+            description=source["description"],
+        )
 
-#     def __repr__(self) -> str:
-#         return str(vars(self))
+    def to_dict(self):
+        return {
+            "condition": self.condition,
+            "description": self.description,
+            "created_at": self.created_at,
+        }
+
+    def __repr__(self) -> str:
+        return str(vars(self))
 
 
 # class Location:
@@ -112,18 +121,18 @@ class PWID:
     @staticmethod
     def from_dict(source):
         return PWID(
-            source["id"],
-            source["name"],
-            source["language_preference"],
-            source["phone_number"],
-            source["medical_conditions"],
-            source["nric"],
-            source["address"],
-            source["date_of_birth"],
-            source["gender"],
-            source["gender_preference"],
-            source["emergency_contacts"],
-            source["location"],
+            id=source["id"],
+            name=source["name"],
+            language_preference=source["language_preference"],
+            phone_number=source["phone_number"],
+            medical_conditions=source["medical_conditions"],
+            nric=source["nric"],
+            address=source["address"],
+            date_of_birth=source["date_of_birth"],
+            gender=source["gender"],
+            gender_preference=source["gender_preference"],
+            emergency_contacts=source["emergency_contacts"],
+            location=source["location"],
         )
 
     def to_dict(self):
@@ -159,7 +168,7 @@ class Responder:
         address: str = "",
         date_of_birth: str = "",
         gender: str = "",
-        existing_medical_knowledge: List[Dict[str, str]] = [],
+        existing_medical_knowledge: List[ExistingMedicalKnowledge] = [],
         is_available: bool = True,
         state: CustomStates = CustomStates.ONBOARD,
         message_id: int = -1,  # Used to keep track of last message sent by bot
@@ -182,20 +191,23 @@ class Responder:
     @staticmethod
     def from_dict(source):
         return Responder(
-            source["id"],
-            source["telegram_id"],
-            source["location"],
-            source["name"],
-            source["languages"],
-            source["phone_number"],
-            source["nric"],
-            source["address"],
-            source["date_of_birth"],
-            source["gender"],
-            source["existing_medical_knowledge"],
-            source["is_available"],
-            CustomStates(source["state"]),
-            source["message_id"],
+            id=source["id"],
+            telegram_id=source["telegram_id"],
+            location=source["location"],
+            name=source["name"],
+            languages=source["languages"],
+            phone_number=source["phone_number"],
+            nric=source["nric"],
+            address=source["address"],
+            date_of_birth=source["date_of_birth"],
+            gender=source["gender"],
+            existing_medical_knowledge=[
+                ExistingMedicalKnowledge.from_dict(x)
+                for x in source["existing_medical_knowledge"]
+            ],
+            is_available=source["is_available"],
+            state=CustomStates(source["state"]),
+            message_id=source["message_id"],
         )
 
     def to_dict(self):
@@ -209,7 +221,9 @@ class Responder:
             "address": self.address,
             "date_of_birth": self.date_of_birth,
             "gender": self.gender,
-            "existing_medical_knowledge": self.existing_medical_knowledge,
+            "existing_medical_knowledge": [
+                x.to_dict() for x in self.existing_medical_knowledge
+            ],
             "location": self.location,
             "is_available": self.is_available,
             "state": self.state.value,

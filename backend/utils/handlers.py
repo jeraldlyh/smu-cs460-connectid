@@ -106,11 +106,12 @@ async def process_profile(
         text += "\n"
 
     for index, medical_knowledge in enumerate(responder.existing_medical_knowledge):
-        has_description = "description" in medical_knowledge
         medical_description = (
-            f" - <i>{medical_knowledge['description']}</i>" if has_description else ""
+            f" - <i>{medical_knowledge.description}</i>"
+            if medical_knowledge.description
+            else ""
         )
-        text += f"{index + 1}. {medical_knowledge['name']}{medical_description}\n"
+        text += f"{index + 1}. {medical_knowledge.condition}{medical_description}\n"
     text = text.rstrip("\n")
     options = ["➕ Add", "➖ Remove"]
     keyboard = types.InlineKeyboardMarkup()
