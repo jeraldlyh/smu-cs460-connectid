@@ -72,9 +72,14 @@ async def process_reject_distress(
     await bot.edit_message_text(
         chat_id=callback.message.chat.id,
         message_id=callback.message.id,
-        text=f"You have rejected this distress signal. Do kindly check out of the system if you are unavailable.",
+        text=f"You have rejected this distress signal and have been checked out of the system. Do kindly check back in when you are available.",
         parse_mode="HTML",
     )
+
+    # Prevents same responder from getting matched to the same signal
+    responder = cast(Responder, distress.responder)
+    responder.is_available = False
+    await database.update_responder(responder)
 
     # Dispatcher group chat message
     keyboard = types.InlineKeyboardMarkup()
