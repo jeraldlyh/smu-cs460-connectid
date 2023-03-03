@@ -9,7 +9,7 @@ from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_storage import StateMemoryStorage
 from utils.calendar import Calendar, CallbackFactory
-from utils.dispatcher import process_manual_acknowledge_distress
+from utils.dispatcher import process_false_distress, process_manual_acknowledge_distress
 from utils.form import (
     process_address,
     process_date_of_birth,
@@ -151,9 +151,9 @@ async def callback_handler(call: types.CallbackQuery) -> None:
                 )
         case "dispatcher":
             option = callback_data[1]
-            group_chat_message_id = callback_data[2]
 
             if option == "accept":
+                group_chat_message_id = callback_data[2]
                 await process_manual_acknowledge_distress(
                     bot=bot,
                     database=database,
@@ -161,7 +161,12 @@ async def callback_handler(call: types.CallbackQuery) -> None:
                     group_chat_message_id=int(group_chat_message_id),
                 )
             else:
-                pass
+                await process_false_distress(
+                    bot=bot,
+                    database=database,
+                    callback=call,
+                    group_chat_message_id=call.message.id,
+                )
 
 
 @bot.message_handler(commands=["start"])
