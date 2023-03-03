@@ -1,7 +1,5 @@
-import os
 import sys
-import uuid
-from typing import Optional, Tuple
+from typing import cast
 
 import requests
 from database import Firestore
@@ -9,16 +7,15 @@ from database.models import PWID, Distress, Location, Responder
 from flask import jsonify, request
 from telebot import types
 from telebot.async_telebot import AsyncTeleBot
+from utils import get_group_chat_id
 from utils.medical import _get_list_of_existing_experience
 from utils.url import _get_google_maps_link
 
 from routes import app
 from routes.telegram import bot
 
-GROUP_CHAT_ID = int(os.getenv("TELEGRAM_CHAT_ID", -1))
 
-
-def _get_location_of_ip_address(ip_address: str) -> Tuple[Location, str]:
+def _get_location_of_ip_address(ip_address: str) -> Location:
     fields = [
         "status",
         "message",
@@ -34,24 +31,24 @@ def _get_location_of_ip_address(ip_address: str) -> Tuple[Location, str]:
     )
     result = response.json()
 
-    return (
-        Location(longitude=result["lon"], latitude=result["lat"]),
-        f"{result['district']}, (S){result['zip']}",
+    return Location(
+        longitude=result["lon"],
+        latitude=result["lat"],
+        address=f"{result['district']}, (S){result['zip']}",
     )
 
 
-async def _create_distress(
-    database: Firestore,
-    location: str,
-    pwid: PWID,
-    responder: Optional[Responder] = None,
-) -> str:
-    distress = Distress(
-        id=str(uuid.uuid4()), location=location, pwid=pwid, responder=responder
-    )
-    await database.create_distress(distress)
-
-    return distress.id
+# async def _create_distress(
+#     database: Firestore,
+#     location: str,
+#     pwid: PWID,
+#     responder: Optional[Responder] = None,
+# ) -> None:
+#     distress = Distress(
+#         group_chat_message_id=
+#         id=str(uuid.uuid4()), location=location, pwid=pwid, responder=responder
+#     )
+#     await database.create_distress(distress)
 
 
 @app.route("/sos", methods=["GET"])
@@ -69,7 +66,7 @@ async def request_help():
     if not pwid_ip_address:
         return jsonify("Unable to retrieve IP address"), 400
 
-    location, address = _get_location_of_ip_address("219.75.78.138")
+    location = _get_location_of_ip_address("219.75.78.138")
     pwid.location = location
     responders = await database.get_responders()
 
@@ -104,43 +101,82 @@ async def request_help():
             ):
                 available_responder = responder
 
+    group_chat_message_id = await process_notify_dispatcher(
+        bot=bot, responder=available_responder, pwid=pwid, address=location.address
+    )
+
+    distress = Distress(
+        group_chat_message_id=group_chat_message_id,
+        message_id=-1,
+        location=location,
+        pwid=pwid,
+        responder=available_responder,
+    )
+
     if not available_responder:
-        await _create_distress(database=database, location=address, pwid=pwid)
-        # TODO: blast out telegram message
+        await database.create_distress(distress)
         return jsonify("Unable to find an available responder right now"), 400
 
-    distress_id = await _create_distress(
-        database=database, location=address, pwid=pwid, responder=available_responder
-    )
+    message_id = await process_notify_responder(bot=bot, distress=distress)
+    distress.message_id = message_id
+    await database.create_distress(distress)
 
-    await process_notify_responder(
-        bot=bot,
-        responder=available_responder,
-        pwid=pwid,
-        address=address,
-        distress_id=distress_id,
-    )
     return jsonify(f"{available_responder.name} will be attending to {pwid.name}")
 
 
-async def process_notify_responder(
-    bot: AsyncTeleBot, responder: Responder, pwid: PWID, address: str, distress_id: str
-) -> None:
+async def process_notify_responder(bot: AsyncTeleBot, distress: Distress) -> int:
     keyboard = types.InlineKeyboardMarkup()
     accept = types.InlineKeyboardButton(
-        text="✅ Accept", callback_data=f"distress accept {distress_id}"
+        text="✅ Accept",
+        callback_data=f"distress accept {distress.group_chat_message_id}",
     )
     decline = types.InlineKeyboardButton(
-        text="❌ Decline", callback_data=f"distress decline {distress_id}"
+        text="❌ Decline",
+        callback_data=f"distress decline {distress.group_chat_message_id}",
     )
     keyboard.add(accept, decline, row_width=2)
 
-    text = "<b>Distress Signal</b>\n\n"
-    text += f"<b>{pwid.name}</b> is in need of help now. He's currently located at <a href='{_get_google_maps_link(address)}'>{address}</a>. Kindly acknowledge this message within 30 seconds."
+    text = "<b>❗ Distress Signal ❗</b>\n\n"
+    text += f"<b>{distress.pwid.name}</b> is in need of help now. He's currently located at <a href='{_get_google_maps_link(distress.pwid.location.address)}'>{distress.pwid.location.address}</a>. Kindly acknowledge this message within 30 seconds."
 
-    await bot.send_message(
-        chat_id=responder.telegram_id,
+    message = await bot.send_message(
+        chat_id=cast(Responder, distress.responder).telegram_id,
         text=text,
         parse_mode="HTML",
         reply_markup=keyboard,
     )
+    return message.id
+
+
+async def process_notify_dispatcher(
+    bot: AsyncTeleBot,
+    responder: Responder | None,
+    pwid: PWID,
+    address: str,
+) -> int:
+    keyboard = types.InlineKeyboardMarkup()
+    accept = types.InlineKeyboardButton(
+        text="✅ Accept", callback_data=f"dispatcher accept"
+    )
+    decline = types.InlineKeyboardButton(
+        text="❌ Cancel", callback_data=f"dispatcher cancel"
+    )
+    keyboard.add(accept, decline, row_width=2)
+
+    text = "<b>❗ Distress Signal ❗</b>\n\n"
+    text += "<b>Status: </b> 🔴 Not Acknowledged\n\n"
+    text += f"<b>{pwid.name}</b> is in need of help now. He's currently located at <a href='{_get_google_maps_link(address)}'>{address}</a>.\n\n"
+
+    if responder is None:
+        text += "There's no responders available at this moment. Kindly handle this signal manually or wait for the system to look for a responder."
+    else:
+        text += f"A message has been sent out to <b>{responder.name}</b> to request for assistance."
+    text += "\n\n<i>If you think that this is a false signal, please proceed to cancel this signal.</i>"
+
+    message = await bot.send_message(
+        chat_id=get_group_chat_id(),
+        text=text,
+        parse_mode="HTML",
+        reply_markup=keyboard,
+    )
+    return message.id

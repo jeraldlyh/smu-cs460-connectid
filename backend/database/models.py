@@ -192,7 +192,7 @@ class Responder:
         is_available: bool = False,
         state: CustomStates = CustomStates.ONBOARD,
         message_id: int = -1,  # Used to keep track of last message sent by bot
-        distress_signals: List[Acknowledgement] = [],
+        # distress_signals: List[Acknowledgement] = [],
     ) -> None:
         self.id = id
         self.telegram_id = telegram_id
@@ -208,7 +208,7 @@ class Responder:
         self.is_available = is_available
         self.state = state
         self.message_id = message_id
-        self.distress_signals = distress_signals
+        # self.distress_signals = distress_signals
 
     @staticmethod
     def from_dict(source):
@@ -230,9 +230,9 @@ class Responder:
             is_available=source["is_available"],
             state=CustomStates(source["state"]),
             message_id=source["message_id"],
-            distress_signals=[
-                Acknowledgement.from_dict(x) for x in source["distress_signals"]
-            ],
+            # distress_signals=[
+            #     Acknowledgement.from_dict(x) for x in source["distress_signals"]
+            # ],
         )
 
     def to_dict(self):
@@ -253,7 +253,7 @@ class Responder:
             "is_available": self.is_available,
             "state": self.state.value,
             "message_id": self.message_id,
-            "distress_signals": [x.to_dict() for x in self.distress_signals],
+            # "distress_signals": [x.to_dict() for x in self.distress_signals],
         }
 
     def __repr__(self) -> str:
@@ -263,46 +263,50 @@ class Responder:
 class Distress:
     def __init__(
         self,
-        id: str,
-        location: str,
+        group_chat_message_id: int,  # Group chat message ID
+        message_id: int,
+        location: Location,
         pwid: PWID,
         responder: Optional[Responder] = None,
         created_at: str = str(datetime.now()),
         acknowledged_at: str = "",
-        is_manual: bool = False,
+        is_completed: bool = False,
         is_acknowledged: bool = False,
     ) -> None:
+        self.group_chat_message_id = group_chat_message_id
+        self.message_id = message_id
         self.location = location
         self.pwid = pwid
         self.responder = responder
         self.created_at = created_at
         self.acknowledged_at = acknowledged_at
-        self.is_manual = is_manual
+        self.is_completed = is_completed
         self.is_acknowledged = is_acknowledged
-        self.id = id
 
     @staticmethod
     def from_dict(source):
         return Distress(
-            id=source["id"],
-            location=source["location"],
+            group_chat_message_id=source["group_chat_message_id"],
+            message_id=source["message_id"],
+            location=Location.from_dict(source["location"]),
             pwid=PWID.from_dict(source["pwid"]),
             responder=Responder.from_dict(source["responder"]),
             created_at=source["created_at"],
             acknowledged_at=source["acknowledged_at"],
-            is_manual=source["is_manual"],
+            is_completed=source["is_completed"],
             is_acknowledged=source["is_acknowledged"],
         )
 
     def to_dict(self):
         return {
-            "id": self.id,
-            "location": self.location,
+            "group_chat_message_id": self.group_chat_message_id,
+            "message_id": self.message_id,
+            "location": self.location.to_dict(),
             "pwid": self.pwid.to_dict(),
             "responder": self.responder.to_dict() if self.responder else {},
             "created_at": self.created_at,
             "acknowledged_at": self.acknowledged_at,
-            "is_manual": self.is_manual,
+            "is_completed": self.is_completed,
             "is_acknowledged": self.is_acknowledged,
         }
 

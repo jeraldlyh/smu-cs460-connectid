@@ -91,19 +91,19 @@ class Firestore(SingletonClass):
 
         return responder.message_id
 
-    def _get_distress_ref(self, doc_id: str) -> firestore.AsyncDocumentReference:
-        return self.db.collection(self.DISTRESS_COLLECTION).document(doc_id)
+    def _get_distress_ref(self, doc_id: int) -> firestore.AsyncDocumentReference:
+        return self.db.collection(self.DISTRESS_COLLECTION).document(str(doc_id))
 
     async def create_distress(self, data: Distress) -> None:
-        doc_ref = self._get_distress_ref(data.id)
+        doc_ref = self._get_distress_ref(data.group_chat_message_id)
         await doc_ref.set(data.to_dict())
 
-    async def get_distress(self, distress_id: str) -> Distress:
-        doc_ref = self._get_distress_ref(distress_id)
+    async def get_distress(self, group_chat_message_id: int) -> Distress:
+        doc_ref = self._get_distress_ref(group_chat_message_id)
         doc = await doc_ref.get()
 
         return Distress.from_dict(doc.to_dict())
 
     async def update_distress(self, data: Distress) -> None:
-        doc_ref = self._get_distress_ref(data.id)
+        doc_ref = self._get_distress_ref(data.group_chat_message_id)
         await doc_ref.update(data.to_dict())

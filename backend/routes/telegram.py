@@ -131,12 +131,14 @@ async def callback_handler(call: types.CallbackQuery) -> None:
             )
         case "distress":
             option = callback_data[1]
-            distress_id = callback_data[2]
-            print(callback_data)
+            group_chat_message_id = callback_data[2]
 
             if option == "accept":
                 await process_acknowledge_distress(
-                    bot=bot, database=database, callback=call, distress_id=distress_id
+                    bot=bot,
+                    database=database,
+                    callback=call,
+                    group_chat_message_id=int(group_chat_message_id),
                 )
             else:
                 pass
