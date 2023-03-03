@@ -1,0 +1,159 @@
+[
+    {
+        "name": "Wu Kai Ming",
+        "language_preference": "English",
+        "medical_conditions": [
+            "Autism"
+        ],
+        "phone_number": "67787471",
+        "nric": "820B",
+        "address": "Blk 352B Gleichner Grove Highway, SINGAPORE 759061",
+        "date_of_birth": "1992-01-17",
+        "emergency_contacts": [
+            {
+                "name": "Wu Wen Kai",
+                "phone_number": "95659031",
+                "relationship": "Father"
+            },
+            {
+                "name": "Tin Kai Ling",
+                "phone_number": "65583120",
+                "relationship": "Mother"
+            }
+        ],
+        "gender": "Male",
+        "gender_preference": "Male",
+        "location": {
+            "latitude": 1.3322497,
+            "longitude": 103.907226
+        }
+    },
+    {
+        "name": "Zeng Yan Ling",
+        "language_preference": "English",
+        "medical_conditions": [
+            "Autism"
+        ],
+        "phone_number": "92353197",
+        "nric": "565D",
+        "address": "Blk 253F Jalan Haag Drive, SINGAPORE 088213",
+        "date_of_birth": "1999-02-07",
+        "emergency_contacts": [
+            {
+                "name": "Zeng Jia De",
+                "phone_number": "63454962",
+                "relationship": "Father"
+            }
+        ],
+        "gender": "Female",
+        "gender_preference": "Female",
+        "location": {
+            "latitude": 1.3455862,
+            "longitude": 103.7659895
+        }
+    },
+    {
+        "name": "Toh Rui En",
+        "language_preference": "Chinese",
+        "medical_conditions": [
+            "Anxiety"
+        ],
+        "phone_number": "64569600",
+        "nric": "273B",
+        "address": "Blk 995H Jalan Lynch Avenue, SINGAPORE 780297",
+        "date_of_birth": "1991-06-30",
+        "emergency_contacts": [
+            {
+                "name": "Zhong Kai Wen",
+                "phone_number": "60771965",
+                "relationship": "Guardian"
+            }
+        ],
+        "gender": "Female",
+        "gender_preference": "Female",
+        "location": {
+            "latitude": 1.3415475,
+            "longitude": 103.7703106
+        }
+    },
+    {
+        "name": "Cheong Zi Yi",
+        "language_preference": "Cantonese",
+        "medical_conditions": [
+            "Autism",
+            "Anxiety"
+        ],
+        "phone_number": "86297747",
+        "nric": "588I",
+        "address": "380 Jalan Dooley Way, SINGAPORE 498089",
+        "date_of_birth": "1984-03-27",
+        "emergency_contacts": [
+            {
+                "name": "Cheong Si Hui",
+                "phone_number": "69139581",
+                "relationship": "Mother"
+            }
+        ],
+        "gender": "Male",
+        "gender_preference": "Female",
+        "location": {
+            "latitude": 1.3053881,
+            "longitude": 103.8394586
+        }
+    },
+    {
+        "name": "Balaji Subramanian",
+        "language_preference": "Tamil",
+        "medical_conditions": [
+            "Anxiety",
+            "Personality"
+        ],
+        "phone_number": "69888092",
+        "nric": "937F",
+        "address": "Blk 352B Gleichner Grove Highway, SINGAPORE 759061",
+        "date_of_birth": "1992-01-17",
+        "emergency_contacts": [
+            {
+                "name": "Saravanan Subramanian",
+                "phone_number": "66828752",
+                "relationship": "Father"
+            },
+            {
+                "name": "Deepika Nagarajan",
+                "phone_number": "65289977",
+                "relationship": "Mother"
+            }
+        ],
+        "gender": "Male",
+        "gender_preference": "Male",
+        "location": {
+            "latitude": 1.3985653,
+            "longitude": 103.8919067
+        }
+    },
+    {
+        "name": "Shalini Muthu",
+        "language_preference": "Tamil",
+        "medical_conditions": [
+            "Autism",
+            "ADHD"
+        ],
+        "phone_number": "61624926",
+        "nric": "517F",
+        "address": "Blk 290E Kemmer Alley Place, SINGAPORE 485515",
+        "date_of_birth": "2000-07-20",
+        "emergency_contacts": [
+            {
+                "name": "Ravi Arumugam",
+                "phone_number": "67486551",
+                "relationship": "Guardian"
+            }
+        ],
+        "gender": "Female",
+        "gender_preference": "Female",
+        "location": {
+            "latitude": 1.3206198,
+            "longitude": 103.8944379
+        }
+    }
+]

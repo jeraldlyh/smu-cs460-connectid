@@ -6,18 +6,21 @@ from firebase_admin import initialize_app
 
 # Firebase Initialisation
 load_dotenv()
-credential_path = str(os.getenv("CREDENTIAL_PATH"))
+CREDENTIAL_PATH = str(os.getenv("CREDENTIAL_PATH"))
 
 
+# Manually generate service account credentials
 def create_firestore_credentials() -> None:
-    file = open(credential_path, "w")
+    file = open(CREDENTIAL_PATH, "w")
     file.write(
         json.dumps(
             {
                 "type": str(os.getenv("FIRESTORE_TYPE")),
                 "project_id": str(os.getenv("FIRESTORE_PROJECT_ID")),
                 "private_key_id": str(os.getenv("FIRESTORE_PRIVATE_KEY_ID")),
-                "private_key": str(os.getenv("FIRESTORE_PRIVATE_KEY")),
+                "private_key": str(os.getenv("FIRESTORE_PRIVATE_KEY")).replace(
+                    r"\n", "\n"
+                ),
                 "client_email": str(os.getenv("FIRESTORE_CLIENT_EMAIL")),
                 "client_id": str(os.getenv("FIRESTORE_CLIENT_ID")),
                 "auth_uri": str(os.getenv("FIRESTORE_AUTH_URI")),
@@ -36,7 +39,7 @@ def create_firestore_credentials() -> None:
 
 
 create_firestore_credentials()
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credential_path
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = CREDENTIAL_PATH
 initialize_app()
 
 from routes import app
