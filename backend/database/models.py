@@ -305,7 +305,7 @@ class Distress:
             "message_id": self.message_id,
             "location": self.location.to_dict(),
             "pwid": self.pwid.to_dict(),
-            "responder": self.responder.to_dict() if self.responder else {},
+            "responder": self.responder.to_dict() if self.responder is not None else {},
             "created_at": self.created_at,
             "acknowledged_at": self.acknowledged_at,
             "is_completed": self.is_completed,

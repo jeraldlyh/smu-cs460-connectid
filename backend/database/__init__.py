@@ -107,3 +107,16 @@ class Firestore(SingletonClass):
     async def update_distress(self, data: Distress) -> None:
         doc_ref = self._get_distress_ref(data.group_chat_message_id)
         await doc_ref.update(data.to_dict())
+
+    async def get_all_pending_distress(self) -> List[Distress]:
+        docs = (
+            self.db.collection(self.DISTRESS_COLLECTION)
+            .where("is_acknowledged", "==", False)
+            .where("responder", "==", {})
+            .stream()
+        )
+
+        distress_signals = []
+        async for x in docs:  # type: ignore
+            distress_signals.append(Distress.from_dict(x.to_dict()))
+        return distress_signals

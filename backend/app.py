@@ -1,7 +1,6 @@
 import json
 import os
 
-import telebot
 from dotenv import load_dotenv
 from firebase_admin import initialize_app
 

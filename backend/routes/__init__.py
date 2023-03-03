@@ -6,6 +6,7 @@ app = Flask(__name__)
 
 import routes.pwid
 import routes.responder
+import routes.scheduler
 import routes.sos
 import routes.telegram
 

@@ -1,5 +1,5 @@
 import sys
-from typing import cast
+from typing import List, cast
 
 import requests
 from database import Firestore
@@ -38,25 +38,9 @@ def _get_location_of_ip_address(ip_address: str) -> Location:
     )
 
 
-@app.route("/sos", methods=["GET"])
-async def request_help():
-    args = request.args
-    name = args.get("name")
-
-    if not name:
-        return jsonify("Missing query parameters"), 400
-
-    database = Firestore()
-    pwid = await database.get_pwid(name)
-    pwid_ip_address = request.remote_addr
-
-    if not pwid_ip_address:
-        return jsonify("Unable to retrieve IP address"), 400
-
-    location = _get_location_of_ip_address("219.75.78.138")
-    pwid.location = location
-    responders = await database.get_responders()
-
+def get_available_responder(
+    pwid: PWID, responders: List[Responder]
+) -> Responder | None:
     available_responder = None
     pwid_latitude = pwid.location.latitude
     pwid_longitude = pwid.location.longitude
@@ -87,6 +71,29 @@ async def request_help():
                 and matches_gender_preference
             ):
                 available_responder = responder
+    return available_responder
+
+
+@app.route("/sos", methods=["GET"])
+async def request_help():
+    args = request.args
+    name = args.get("name")
+
+    if not name:
+        return jsonify("Missing query parameters"), 400
+
+    database = Firestore()
+    pwid = await database.get_pwid(name)
+    pwid_ip_address = request.remote_addr
+
+    if not pwid_ip_address:
+        return jsonify("Unable to retrieve IP address"), 400
+
+    location = _get_location_of_ip_address("219.75.78.138")
+    pwid.location = location
+    responders = await database.get_responders()
+
+    available_responder = get_available_responder(pwid=pwid, responders=responders)
 
     group_chat_message_id = await process_notify_dispatcher(
         bot=bot, responder=available_responder, pwid=pwid, address=location.address
@@ -140,6 +147,7 @@ async def process_notify_dispatcher(
     responder: Responder | None,
     pwid: PWID,
     address: str,
+    distress: Distress | None = None,
 ) -> int:
     keyboard = types.InlineKeyboardMarkup()
     accept = types.InlineKeyboardButton(
@@ -159,6 +167,16 @@ async def process_notify_dispatcher(
     else:
         text += f"A message has been sent out to <b>{responder.name}</b> to request for assistance."
     text += "\n\n<i>If you think that this is a false signal, please proceed to cancel this signal.</i>"
+
+    if distress is not None:
+        await bot.edit_message_text(
+            chat_id=get_group_chat_id(),
+            message_id=distress.group_chat_message_id,
+            text=text,
+            parse_mode="HTML",
+            reply_markup=keyboard,
+        )
+        return -1
 
     message = await bot.send_message(
         chat_id=get_group_chat_id(),

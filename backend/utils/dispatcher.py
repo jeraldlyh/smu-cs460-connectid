@@ -58,7 +58,9 @@ async def process_false_distress(
     callback: types.CallbackQuery,
     group_chat_message_id: int,
 ) -> None:
+    print("here")
     distress = await database.get_distress(group_chat_message_id)
+    print("her2")
     distress.is_acknowledged = True
     distress.acknowledged_at = str(datetime.now())
     distress.is_completed = True
