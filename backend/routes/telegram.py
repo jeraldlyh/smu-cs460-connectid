@@ -31,7 +31,7 @@ from utils.medical import (
     process_skip_description,
     process_welcome_message,
 )
-from utils.sos import process_acknowledge_distress
+from utils.sos import process_acknowledge_distress, process_reject_distress
 
 from routes import app
 
@@ -141,7 +141,12 @@ async def callback_handler(call: types.CallbackQuery) -> None:
                     group_chat_message_id=int(group_chat_message_id),
                 )
             else:
-                pass
+                await process_reject_distress(
+                    bot=bot,
+                    database=database,
+                    callback=call,
+                    group_chat_message_id=int(group_chat_message_id),
+                )
 
 
 @bot.message_handler(commands=["start"])

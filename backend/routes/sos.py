@@ -38,19 +38,6 @@ def _get_location_of_ip_address(ip_address: str) -> Location:
     )
 
 
-# async def _create_distress(
-#     database: Firestore,
-#     location: str,
-#     pwid: PWID,
-#     responder: Optional[Responder] = None,
-# ) -> None:
-#     distress = Distress(
-#         group_chat_message_id=
-#         id=str(uuid.uuid4()), location=location, pwid=pwid, responder=responder
-#     )
-#     await database.create_distress(distress)
-
-
 @app.route("/sos", methods=["GET"])
 async def request_help():
     args = request.args
