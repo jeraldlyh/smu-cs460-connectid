@@ -46,7 +46,7 @@ async def process_acknowledge_distress(
     keyboard.add(decline)
     text = "<b>❗ Distress Signal ❗</b>\n\n"
     text += "<b>Status: </b> 🟠 Acknowledged\n\n"
-    text += f"<b>{cast(Responder, distress.responder).name}</b> is on the way to assist {distress.pwid.name} at {anchor_tag}\n\n"
+    text += f"<b>{cast(Responder, distress.responder).name}</b> is on the way to assist <b>{distress.pwid.name}</b> at {anchor_tag}\n\n"
     text += "<i>If you think that this is a false signal, please proceed to cancel this signal.</i>"
 
     await bot.edit_message_text(
@@ -65,8 +65,7 @@ async def process_reject_distress(
     group_chat_message_id: int,
 ) -> None:
     distress = await database.get_distress(group_chat_message_id)
-    distress.message_id = -1
-    await database.update_distress(distress)
+
     # TODO: add to cron job
 
     # Responder message
@@ -91,8 +90,13 @@ async def process_reject_distress(
 
     text = "<b>❗ Distress Signal ❗</b>\n\n"
     text += "<b>Status: </b> 🔴 Not Acknowledged\n\n"
-    text += f"<b>{cast(Responder, distress.responder).name}</b> is unavailable at the moment to assist <b>{distress.pwid.name}</b> at {_get_anchor_tag(distress)}. The system will proceed to look for another responder. If you think this distress signal is urgent, kindly manage it manually.\n\n"
+    text += f"<b>{cast(Responder, distress.responder).name}</b> is unavailable at the moment to assist <b>{distress.pwid.name}</b> at {_get_anchor_tag(distress)}.\n\n"
+    text += "The system will proceed to look for another responder. If you think this distress signal is urgent, kindly manage it manually.\n\n"
     text += "<i>If you think that this is a false signal, please proceed to cancel this signal.</i>"
+
+    distress.message_id = -1
+    distress.responder = None
+    await database.update_distress(distress)
 
     await bot.edit_message_text(
         chat_id=get_group_chat_id(),

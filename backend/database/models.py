@@ -290,7 +290,9 @@ class Distress:
             message_id=source["message_id"],
             location=Location.from_dict(source["location"]),
             pwid=PWID.from_dict(source["pwid"]),
-            responder=Responder.from_dict(source["responder"]),
+            responder=Responder.from_dict(source["responder"])
+            if source["responder"]
+            else None,
             created_at=source["created_at"],
             acknowledged_at=source["acknowledged_at"],
             is_completed=source["is_completed"],

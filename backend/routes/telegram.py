@@ -9,6 +9,7 @@ from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_storage import StateMemoryStorage
 from utils.calendar import Calendar, CallbackFactory
+from utils.dispatcher import process_manual_acknowledge_distress
 from utils.form import (
     process_address,
     process_date_of_birth,
@@ -31,7 +32,7 @@ from utils.medical import (
     process_skip_description,
     process_welcome_message,
 )
-from utils.sos import process_acknowledge_distress, process_reject_distress
+from utils.responder import process_acknowledge_distress, process_reject_distress
 
 from routes import app
 
@@ -63,6 +64,7 @@ async def callback_handler(call: types.CallbackQuery) -> None:
     callback_data = call.data.split(" ") if " " in call.data else [call.data]
     action = callback_data[0]
     database = Firestore()
+    print(callback_data)
 
     match action:
         case "onboard":
@@ -147,6 +149,19 @@ async def callback_handler(call: types.CallbackQuery) -> None:
                     callback=call,
                     group_chat_message_id=int(group_chat_message_id),
                 )
+        case "dispatcher":
+            option = callback_data[1]
+            group_chat_message_id = callback_data[2]
+
+            if option == "accept":
+                await process_manual_acknowledge_distress(
+                    bot=bot,
+                    database=database,
+                    callback=call,
+                    group_chat_message_id=int(group_chat_message_id),
+                )
+            else:
+                pass
 
 
 @bot.message_handler(commands=["start"])
