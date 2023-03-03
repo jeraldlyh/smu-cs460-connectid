@@ -28,7 +28,8 @@ async def process_welcome_message(
                 if responder_id is not None
                 else cast(types.Message, message).chat.id
             )
-    except Exception:
+    except Exception as e:
+        print("Error in processing welcome message", e)
         is_onboarded = False
 
     # Ignore repeated /start commands

@@ -8,6 +8,7 @@ from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 
 from utils import get_group_chat_id
+from utils.handlers import process_welcome_message
 from utils.url import _get_google_maps_link
 
 
@@ -66,8 +67,6 @@ async def process_reject_distress(
 ) -> None:
     distress = await database.get_distress(group_chat_message_id)
 
-    # TODO: add to cron job
-
     # Responder message
     await bot.edit_message_text(
         chat_id=callback.message.chat.id,
@@ -115,4 +114,13 @@ async def process_reject_distress(
     await asyncio.sleep(3)
     await bot.delete_message(
         chat_id=callback.message.chat.id, message_id=callback.message.id
+    )
+
+    await process_welcome_message(
+        bot=bot,
+        message=responder.message_id,
+        is_edit=True,
+        database=database,
+        chat_id=responder.telegram_id,
+        responder_id=responder.telegram_id,
     )
