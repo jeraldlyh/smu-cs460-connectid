@@ -38,7 +38,7 @@ from routes import app
 IS_DEV = bool(os.getenv("IS_DEV"))
 API_TOKEN = str(os.getenv("TELEGRAM_API_TOKEN"))
 WEBHOOK_URL_BASE = (
-    str(os.getenv("PROD_WEBHOOK_URL")) if IS_DEV else str(os.getenv("DEV_WEBHOOK_URL"))
+    str(os.getenv("DEV_WEBHOOK_URL")) if IS_DEV else str(os.getenv("PROD_WEBHOOK_URL"))
 )
 WEBHOOK_URL_PATH = f"/${API_TOKEN}"
 
