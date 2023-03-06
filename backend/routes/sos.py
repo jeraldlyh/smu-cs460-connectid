@@ -9,6 +9,7 @@ from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 from utils import get_group_chat_id
 from utils.medical import _get_list_of_existing_experience
+from utils.text import _get_pwid_contacts
 from utils.url import _get_google_maps_link
 
 from routes import app
@@ -169,6 +170,7 @@ async def process_notify_dispatcher(
 
     text = "<b>❗ Distress Signal ❗</b>\n\n"
     text += "<b>Status: </b> 🔴 Not Acknowledged\n\n"
+    text += _get_pwid_contacts(pwid)
     text += f"<b>{pwid.name}</b> is in need of help now. He's currently located at <a href='{_get_google_maps_link(address)}'>{address}</a>.\n\n"
 
     if responder is None:

@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 
 class ExistingMedicalKnowledge:
@@ -55,29 +55,29 @@ class Location:
         }
 
 
-# class EmergencyContact:
-#     def __init__(self, name: str, phone_number: str, relationship: str) -> None:
-#         self.name = name
-#         self.phone_number = phone_number
-#         self.relationship = relationship
+class EmergencyContact:
+    def __init__(self, name: str, phone_number: str, relationship: str) -> None:
+        self.name = name
+        self.phone_number = phone_number
+        self.relationship = relationship
 
-#     @staticmethod
-#     def from_dict(source):
-#         return EmergencyContact(
-#             source["name"],
-#             source["phone_number"],
-#             source["relationship"],
-#         )
+    @staticmethod
+    def from_dict(source):
+        return EmergencyContact(
+            source["name"],
+            source["phone_number"],
+            source["relationship"],
+        )
 
-#     def to_dict(self):
-#         return {
-#             "name": self.name,
-#             "phone_number": self.phone_number,
-#             "relationship": self.relationship,
-#         }
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "phone_number": self.phone_number,
+            "relationship": self.relationship,
+        }
 
-#     def __repr__(self) -> str:
-#         return str(vars(self))
+    def __repr__(self) -> str:
+        return str(vars(self))
 
 
 class CustomStates(Enum):
@@ -106,7 +106,7 @@ class PWID:
         date_of_birth: str,
         gender: str,
         gender_preference: str,
-        emergency_contacts: List[Dict[str, str]],
+        emergency_contacts: List[EmergencyContact],
         location: Location,
     ) -> None:
         self.id = id
@@ -135,7 +135,9 @@ class PWID:
             date_of_birth=source["date_of_birth"],
             gender=source["gender"],
             gender_preference=source["gender_preference"],
-            emergency_contacts=source["emergency_contacts"],
+            emergency_contacts=[
+                EmergencyContact.from_dict(x) for x in source["emergency_contacts"]
+            ],
             location=Location.from_dict(source["location"]),
         )
 
@@ -151,7 +153,7 @@ class PWID:
             "date_of_birth": self.date_of_birth,
             "gender": self.gender,
             "gender_preference": self.gender_preference,
-            "emergency_contacts": self.emergency_contacts,
+            "emergency_contacts": [x.to_dict() for x in self.emergency_contacts],
             "location": self.location.to_dict(),
         }
 

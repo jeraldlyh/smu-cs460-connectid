@@ -45,3 +45,15 @@ def _get_status(distress: Distress | None) -> str:
     elif distress.is_completed:
         return "🟢 Completed"
     return "🔴 Not Acknowledged"
+
+
+def _get_pwid_contacts(pwid: PWID) -> str:
+    text = f"<b>Emergency Contacts:</b> "
+
+    if len(pwid.emergency_contacts) > 0:
+        for contact in pwid.emergency_contacts:
+            text += f"{contact.name} ({contact.relationship})- {contact.phone_number}"
+    else:
+        text += "None"
+    text += "\n\n"
+    return text

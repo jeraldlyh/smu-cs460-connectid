@@ -7,6 +7,7 @@ from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 
 from utils import get_group_chat_id
+from utils.text import _get_pwid_contacts
 from utils.url import _get_google_maps_link
 
 
@@ -42,6 +43,7 @@ async def process_manual_acknowledge_distress(
     # Dispatcher group chat message
     text = "<b>❗ Distress Signal ❗</b>\n\n"
     text += "<b>Status: </b> 🟢 Completed\n\n"
+    text += _get_pwid_contacts(distress.pwid)
     text += f"@{callback.from_user.username} has taken over this signal to assist <b>{distress.pwid.name}</b> at {_get_anchor_tag(distress)}\n\n"
 
     await bot.edit_message_text(
