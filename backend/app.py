@@ -15,7 +15,7 @@ def get_firestore_credentials() -> dict:
         "type": str(os.getenv("FIRESTORE_TYPE")),
         "project_id": str(os.getenv("FIRESTORE_PROJECT_ID")),
         "private_key_id": str(os.getenv("FIRESTORE_PRIVATE_KEY_ID")),
-        "private_key": str(os.getenv("FIRESTORE_PRIVATE_KEY")),
+        "private_key": str(os.getenv("FIRESTORE_PRIVATE_KEY")).replace("\\n", "\n"),
         "client_email": str(os.getenv("FIRESTORE_CLIENT_EMAIL")),
         "client_id": str(os.getenv("FIRESTORE_CLIENT_ID")),
         "auth_uri": str(os.getenv("FIRESTORE_AUTH_URI")),
