@@ -89,7 +89,7 @@ async def request_help():
     if not pwid_ip_address:
         return jsonify("Unable to retrieve IP address"), 400
 
-    location = _get_location_of_ip_address("219.75.78.138")
+    location = _get_location_of_ip_address(pwid_ip_address)
     pwid.location = location
     responders = await database.get_responders()
 
