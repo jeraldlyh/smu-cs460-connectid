@@ -47,7 +47,8 @@ async def process_acknowledge_distress(
     keyboard.add(decline)
     text = "<b>❗ Distress Signal ❗</b>\n\n"
     text += "<b>Status: </b> 🟠 Acknowledged\n\n"
-    text += f"<b>{cast(Responder, distress.responder).name}</b> is on the way to assist <b>{distress.pwid.name}</b> at {anchor_tag}\n\n"
+    responder = cast(Responder, distress.responder)
+    text += f"<b>{responder.name} - {responder.phone_number}</b> is on the way to assist <b>{distress.pwid.name}</b> at {anchor_tag}\n\n"
     text += "<i>If you think that this is a false signal, please proceed to cancel this signal.</i>"
 
     await bot.edit_message_text(
