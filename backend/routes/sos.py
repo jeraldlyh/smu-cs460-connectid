@@ -30,6 +30,7 @@ def _get_location_of_ip_address(ip_address: str) -> Location:
         f"http://ip-api.com/json/{ip_address}?fields={','.join(fields)}"
     )
     result = response.json()
+    print(result)
 
     return Location(
         longitude=result["lon"],
