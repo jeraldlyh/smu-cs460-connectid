@@ -92,6 +92,9 @@ async def request_help():
         else request.environ["HTTP_X_FORWARDED_FOR"]
     )
 
+    if "," in pwid_ip_address:
+        pwid_ip_address = pwid_ip_address.split(",")[0]
+
     if not pwid_ip_address:
         return jsonify("Unable to retrieve IP address"), 400
 
