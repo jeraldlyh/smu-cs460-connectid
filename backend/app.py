@@ -39,7 +39,7 @@ def create_firestore_credentials() -> None:
     file.close()
 
 
-if bool(os.getenv("DEV", True)):
+if bool(os.getenv("DEV", False)):
     create_firestore_credentials()
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = CREDENTIAL_PATH
     initialize_app()
