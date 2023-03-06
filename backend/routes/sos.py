@@ -85,7 +85,12 @@ async def request_help():
 
     database = Firestore()
     pwid = await database.get_pwid(name)
-    pwid_ip_address = request.remote_addr
+
+    pwid_ip_address = (
+        request.environ["REMOTE_ADDR"]
+        if request.environ.get("HTTP_X_FORWARDED_FOR") is None
+        else request.environ["HTTP_X_FORWARDED_FOR"]
+    )
 
     if not pwid_ip_address:
         return jsonify("Unable to retrieve IP address"), 400
