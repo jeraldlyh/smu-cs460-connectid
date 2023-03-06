@@ -1,4 +1,3 @@
-import asyncio
 import os
 from typing import NoReturn
 
@@ -243,13 +242,13 @@ async def message_handler(message: types.Message):
         await bot.delete_message(chat_id=message.chat.id, message_id=message.id)
 
 
-async def main() -> None:
-    # Remove webhook, it fails sometimes if there is a previous webhook
-    await bot.remove_webhook()
-    # Drop all pending updates to prevent spams
-    await bot.set_webhook(
-        url=WEBHOOK_URL_BASE + WEBHOOK_URL_PATH, drop_pending_updates=True
-    )
+# async def main() -> None:
+#     # Remove webhook, it fails sometimes if there is a previous webhook
+#     await bot.remove_webhook()
+#     # Drop all pending updates to prevent spams
+#     await bot.set_webhook(
+#         url=WEBHOOK_URL_BASE + WEBHOOK_URL_PATH, drop_pending_updates=True
+#     )
 
 
-asyncio.run(main())
+# asyncio.run(main())
