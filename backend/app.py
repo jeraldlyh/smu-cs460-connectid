@@ -4,14 +4,11 @@ import os
 from dotenv import load_dotenv
 from firebase_admin import credentials, initialize_app
 
-from utils import get_is_dev_env
-
 # Firebase Initialisation
 load_dotenv()
 CREDENTIAL_PATH = str(os.getenv("CREDENTIAL_PATH"))
 
 
-# Manually generate service account credentials
 def get_firestore_credentials() -> dict:
     return {
         "type": str(os.getenv("FIRESTORE_TYPE")),
@@ -41,12 +38,12 @@ def create_firestore_credentials() -> None:
     file.close()
 
 
-if get_is_dev_env():
-    create_firestore_credentials()
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = CREDENTIAL_PATH
-    initialize_app()
-else:
-    initialize_app(credential=credentials.Certificate(get_firestore_credentials()))
+# if get_is_dev_env():
+create_firestore_credentials()
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = CREDENTIAL_PATH
+initialize_app()
+# else:
+#     initialize_app(credential=credentials.Certificate(get_firestore_credentials()))
 
 from routes import app
 
