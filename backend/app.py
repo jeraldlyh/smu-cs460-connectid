@@ -49,7 +49,7 @@ else:
 from routes import app
 
 
-@app.route("/healthcheck")
+@app.route("/")
 def hello():
     return "I'm alive"
 
