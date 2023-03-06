@@ -1,4 +1,3 @@
-import asyncio
 import os
 from typing import NoReturn
 
@@ -46,6 +45,19 @@ WEBHOOK_URL_PATH = f"/${API_TOKEN}"
 bot = AsyncTeleBot(API_TOKEN, state_storage=StateMemoryStorage())
 calendar = Calendar()
 calendar_callback = CallbackFactory("calendar", "action", "day", "month", "day")
+
+
+@app.route("/setWebhook", methods=["GET"])
+async def setWebhook() -> str:
+    webhook = await bot.get_webhook_info()
+    if webhook.url:
+        await bot.remove_webhook()
+        return f"{webhook.url} removed"
+    else:
+        # Drop all pending updates to prevent spams
+        webhook_url = WEBHOOK_URL_BASE + WEBHOOK_URL_PATH
+        await bot.set_webhook(url=webhook_url, drop_pending_updates=True)
+        return f"Added {webhook_url}"
 
 
 @app.route(WEBHOOK_URL_PATH, methods=["POST"])
@@ -241,15 +253,3 @@ async def message_handler(message: types.Message):
         if not has_error and is_text_required_completed:
             await database.update_responder(responder)
         await bot.delete_message(chat_id=message.chat.id, message_id=message.id)
-
-
-async def main() -> None:
-    # Remove webhook, it fails sometimes if there is a previous webhook
-    await bot.remove_webhook()
-    # Drop all pending updates to prevent spams
-    await bot.set_webhook(
-        url=WEBHOOK_URL_BASE + WEBHOOK_URL_PATH, drop_pending_updates=True
-    )
-
-
-asyncio.run(main())
