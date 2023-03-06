@@ -7,6 +7,7 @@ from flask import abort, request
 from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_storage import StateMemoryStorage
+from utils import get_is_dev_env
 from utils.calendar import Calendar, CallbackFactory
 from utils.dispatcher import process_false_distress, process_manual_acknowledge_distress
 from utils.form import (
@@ -35,10 +36,11 @@ from utils.responder import process_acknowledge_distress, process_reject_distres
 
 from routes import app
 
-IS_DEV = bool(os.getenv("IS_DEV"))
 API_TOKEN = str(os.getenv("TELEGRAM_API_TOKEN"))
 WEBHOOK_URL_BASE = (
-    str(os.getenv("DEV_WEBHOOK_URL")) if IS_DEV else str(os.getenv("PROD_WEBHOOK_URL"))
+    str(os.getenv("DEV_WEBHOOK_URL"))
+    if get_is_dev_env()
+    else str(os.getenv("PROD_WEBHOOK_URL"))
 )
 WEBHOOK_URL_PATH = f"/${API_TOKEN}"
 
@@ -49,6 +51,8 @@ calendar_callback = CallbackFactory("calendar", "action", "day", "month", "day")
 
 @app.route("/setWebhook", methods=["GET"])
 async def setWebhook() -> str:
+    print(WEBHOOK_URL_BASE + WEBHOOK_URL_PATH)
+
     webhook = await bot.get_webhook_info()
     if webhook.url:
         await bot.remove_webhook()

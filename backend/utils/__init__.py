@@ -12,3 +12,7 @@ def get_root_directory() -> Path:
 
 def get_file_path(filename: str) -> str:
     return f"{get_root_directory()}/{filename}"
+
+
+def get_is_dev_env() -> bool:
+    return bool(os.getenv("IS_DEV", False))

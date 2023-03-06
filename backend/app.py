@@ -4,6 +4,8 @@ import os
 from dotenv import load_dotenv
 from firebase_admin import credentials, initialize_app
 
+from utils import get_is_dev_env
+
 # Firebase Initialisation
 load_dotenv()
 CREDENTIAL_PATH = str(os.getenv("CREDENTIAL_PATH"))
@@ -39,7 +41,7 @@ def create_firestore_credentials() -> None:
     file.close()
 
 
-if bool(os.getenv("IS_DEV", False)):
+if get_is_dev_env():
     create_firestore_credentials()
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = CREDENTIAL_PATH
     initialize_app()
