@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { BsGenderFemale, BsGenderMale } from "react-icons/bs";
-import { FaMapMarkerAlt } from "react-icons/fa";
 import { EGender, IMarkerProps, TMarkerResponse } from "./types";
 
 export const Marker = ({
@@ -77,20 +76,19 @@ export const Marker = ({
 
   const renderColor = () => {
     if (is_completed) {
-      return "bg-green-500";
+      return "bg-green-600";
     }
     if (is_acknowledged) {
-      return "bg-orange-500";
+      return "bg-orange-600";
     }
-    return "bg-red-500";
+    return "bg-red-600";
   };
 
   return (
     <div
-      className="absolute top-[-20] left-[-20] width-[40] h-[40]"
+      className={`rounded-full h-5 w-5 ${renderColor()}`}
       onClick={handleOnClick}
     >
-      <FaMapMarkerAlt size={15} className={renderColor()} />
       {renderCard()}
     </div>
   );

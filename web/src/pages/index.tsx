@@ -26,6 +26,12 @@ export default function Home() {
         bootstrapURLKeys={{ key: "" }}
         defaultZoom={12}
         defaultCenter={SINGAPORE_CENTER_COORDINATES}
+        options={{
+          disableDoubleClickZoom: true,
+          clickableIcons: false,
+          maxZoom: 15,
+          minZoom: 12,
+        }}
       >
         {markers.map((props, index) => (
           <Marker
