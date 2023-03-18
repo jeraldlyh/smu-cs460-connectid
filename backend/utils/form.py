@@ -166,7 +166,7 @@ async def process_address(
         reply_markup=calendar.create(
             name=factory.prefix,
             month=now.month,
-            year=now.year,
+            year=1990,  # NOTE: Temporary workaround for not being able to select year
             delete_upon_completion=False,
         ),
         parse_mode="HTML",
@@ -192,7 +192,7 @@ async def process_date_of_birth(
         month=int(month),
         year=int(year),
     )
-
+    print(response)
     if not isinstance(response, datetime):
         return
 

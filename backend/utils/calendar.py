@@ -99,6 +99,7 @@ class Calendar:
         month: int | None = None,
         year: int | None = None,
         delete_upon_completion: bool = True,
+        is_cancel_allowed: bool = False,
     ) -> InlineKeyboardMarkup:
         """
         Creates an inline keyboard with calendar
@@ -108,6 +109,7 @@ class Calendar:
         :return: Returns an InlineKeyboardMarkup object with a calendar.
         """
         self._delete_upon_completion = delete_upon_completion
+        self._is_cancel_allowed = is_cancel_allowed
         now = datetime.now()
 
         if year is None:
@@ -187,7 +189,11 @@ class Calendar:
         next = InlineKeyboardButton(
             text=">", callback_data=factory.create("NEXT", NULL, month, year)
         )
-        keyboard.add(previous, cancel, next)
+
+        if self._is_cancel_allowed:
+            keyboard.add(previous, cancel, next)
+        else:
+            keyboard.add(previous, next)
 
     def _list_months(self, name: str, year: int) -> InlineKeyboardMarkup:
         keyboard = InlineKeyboardMarkup()
@@ -235,11 +241,13 @@ class Calendar:
         if not callback.message.text:
             return
 
+        if action == "NO-OP":
+            await bot.answer_callback_query(callback_query_id=callback.id)
+            return
+
         now = datetime(year, month, 1)
 
         match action:
-            case "IGNORE":
-                await bot.answer_callback_query(callback_query_id=callback.id)
             case "PREVIOUS":
                 previous = now - timedelta(days=1)
                 await bot.edit_message_text(
