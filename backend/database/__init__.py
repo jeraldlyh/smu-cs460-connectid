@@ -132,3 +132,11 @@ class Firestore(SingletonClass):
         async for x in docs:  # type: ignore
             distress_signals.append(Distress.from_dict(x.to_dict()))
         return distress_signals
+
+    async def get_all_distress(self) -> List[Distress]:
+        docs = self.db.collection(self.DISTRESS_COLLECTION).stream()  # type: ignore
+
+        distress_signals = []
+        async for x in docs:  # type: ignore
+            distress_signals.append(Distress.from_dict(x.to_dict()))
+        return distress_signals

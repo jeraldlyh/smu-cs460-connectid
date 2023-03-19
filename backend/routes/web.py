@@ -6,13 +6,21 @@ from flask import jsonify, request
 
 from routes import app
 
-SYSTEM = Responder(id="-1", telegram_id=-1, location=Location(-1, -1))
+SYSTEM = Responder(id="-1", telegram_id=-1, location=Location(-1, -1), name="System")
 
 
 @app.route("/distress", methods=["GET"])
 async def get_distress_signals():
     database = Firestore()
     distress_signals = await database.get_all_incomplete_distress()
+
+    return jsonify([distress.to_dict() for distress in distress_signals])
+
+
+@app.route("/distress/all", methods=["GET"])
+async def get_all_distress_signals():
+    database = Firestore()
+    distress_signals = await database.get_all_distress()
 
     return jsonify([distress.to_dict() for distress in distress_signals])
 
