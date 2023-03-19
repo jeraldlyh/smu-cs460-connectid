@@ -6,6 +6,7 @@ import { EGender, IMarkerProps, TMarkerResponse } from "./types";
 
 export const Marker = ({
   id,
+  location,
   is_acknowledged,
   is_completed,
   pwid,
@@ -56,6 +57,10 @@ export const Marker = ({
       return;
     }
 
+    const formatLocation = () => {
+      return <span>{location.address}</span>;
+    };
+
     const formatEmergencyContacts = () => {
       return pwid.emergency_contacts.map((contact, index) => (
         <span key={index}>
@@ -87,6 +92,10 @@ export const Marker = ({
             <span>{pwid.name}</span>
             {formatGender()}
           </h2>
+          <div className="flex flex-col">
+            <span className="font-semibold text-md underline">Location</span>
+            {formatLocation()}
+          </div>
           <div className="flex flex-col">
             <span className="font-semibold text-md underline">
               Medical Conditions
