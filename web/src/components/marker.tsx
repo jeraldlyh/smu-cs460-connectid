@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { BsGenderFemale, BsGenderMale } from "react-icons/bs";
+import { toast } from "react-toastify";
 import { SignalService } from "../services";
 import { EGender, IMarkerProps, TMarkerResponse } from "./types";
 
@@ -21,11 +22,33 @@ export const Marker = ({
   const handleAcceptSignal = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     const response = await SignalService.acceptSignal(id);
+
+    toast.success(response.message, {
+      position: "top-right",
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+    });
   };
 
   const handleCancelSignal = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     const response = await SignalService.cancelSignal(id);
+
+    toast.success(response.message, {
+      position: "top-right",
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+    });
   };
 
   const renderCard = (): JSX.Element | undefined => {
