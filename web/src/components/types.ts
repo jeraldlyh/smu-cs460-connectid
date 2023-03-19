@@ -31,8 +31,32 @@ export interface IMarkerProps {
   pwid: IPWID;
   onClick: () => void;
 }
+interface IMedicalKnowledge {
+  condition: string;
+  created_at: string;
+  description: string;
+}
+
+interface IResponser {
+  address: string;
+  date_of_birth: string;
+  existing_medical_knowledge: IMedicalKnowledge[];
+  gender: string;
+  id: string;
+  is_available: boolean;
+  languages: string[];
+  location: ILocation;
+  message_id: number;
+  name: string;
+  nric: string;
+  phone_number: string;
+  state: number;
+  telegram_id: number;
+}
 
 export type TMarkerResponse = Exclude<IMarkerProps, "onClick" | "id"> & {
   location: ILocation;
   group_chat_message_id: number;
+  responder: IResponser;
+  status: string;
 };

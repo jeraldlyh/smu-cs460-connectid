@@ -1,3 +1,4 @@
+import { TMarkerResponse } from "../components";
 import { axiosInstance } from "./axios";
 
 interface ISignalResponse {
@@ -20,7 +21,23 @@ const cancelSignal = async (id: number): Promise<ISignalResponse> => {
   return response.data;
 };
 
+const fetchSignals = async (): Promise<TMarkerResponse[]> => {
+  const response = await axiosInstance.get<TMarkerResponse[]>("/distress/all");
+
+  return response.data.map((data) => {
+    if (data.is_completed) {
+      data["status"] = "Completed";
+    } else if (data.is_acknowledged) {
+      data["status"] = "Acknowledged";
+    } else {
+      data["status"] = "Pending";
+    }
+    return data;
+  });
+};
+
 export const SignalService = {
   acceptSignal,
   cancelSignal,
+  fetchSignals,
 };
