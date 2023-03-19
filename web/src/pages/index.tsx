@@ -31,7 +31,6 @@ export default function Home() {
 
   const fetchSignals = async (): Promise<void> => {
     const data = await SignalService.fetchSignals();
-    console.log(data);
     setSignals(data);
   };
 
