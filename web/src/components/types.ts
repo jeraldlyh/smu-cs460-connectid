@@ -25,12 +25,14 @@ interface ILocation {
 export interface IMarkerProps {
   lat: number;
   lng: number;
+  id: number;
   is_acknowledged: boolean;
   is_completed: boolean;
   pwid: IPWID;
   onClick: () => void;
 }
 
-export type TMarkerResponse = Exclude<IMarkerProps, "onClick"> & {
+export type TMarkerResponse = Exclude<IMarkerProps, "onClick" | "id"> & {
   location: ILocation;
+  group_chat_message_id: number;
 };

@@ -1,22 +1,31 @@
 import { useState } from "react";
 import { BsGenderFemale, BsGenderMale } from "react-icons/bs";
+import { SignalService } from "../services";
 import { EGender, IMarkerProps, TMarkerResponse } from "./types";
 
 export const Marker = ({
-  location,
-  lat,
-  lng,
+  id,
   is_acknowledged,
   is_completed,
   pwid,
   onClick,
+  ...otherProps
 }: IMarkerProps & TMarkerResponse) => {
-  console.log(lat, lng);
   const [display, setDisplay] = useState<boolean>(false);
 
   const handleOnClick = () => {
     onClick && onClick();
     setDisplay(!display);
+  };
+
+  const handleAcceptSignal = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    const response = await SignalService.acceptSignal(id);
+  };
+
+  const handleCancelSignal = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    const response = await SignalService.cancelSignal(id);
   };
 
   const renderCard = (): JSX.Element | undefined => {
@@ -66,15 +75,19 @@ export const Marker = ({
             {formatEmergencyContacts()}
           </div>
           <div className="card-actions mt-3 flex justify-between">
-            <button className="btn bg-green-700">Accept</button>
-            <button className="btn bg-red-700">Cancel</button>
+            <button className="btn bg-green-700" onClick={handleAcceptSignal}>
+              Accept
+            </button>
+            <button className="btn bg-red-700" onClick={handleCancelSignal}>
+              Cancel
+            </button>
           </div>
         </div>
       </div>
     );
   };
 
-  const renderColor = () => {
+  const renderColor = (): string => {
     if (is_completed) {
       return "bg-green-600";
     }

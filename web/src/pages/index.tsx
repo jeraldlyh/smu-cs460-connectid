@@ -37,6 +37,7 @@ export default function Home() {
           <Marker
             key={index}
             {...props}
+            id={props.group_chat_message_id}
             lat={props.location.latitude}
             lng={props.location.longitude}
           />
