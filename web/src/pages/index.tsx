@@ -31,6 +31,7 @@ export default function Home() {
 
   const fetchSignals = async (): Promise<void> => {
     const data = await SignalService.fetchSignals();
+    console.log(data);
     setSignals(data);
   };
 
@@ -54,11 +55,7 @@ export default function Home() {
         <tr key={data.group_chat_message_id}>
           <td>{data.group_chat_message_id}</td>
           <td>{data.pwid.name}</td>
-          <td>
-            {data.responder
-              ? data.responder.name
-              : "Waiting for a responder to acknowledge..."}
-          </td>
+          <td>{data.responder.name ? data.responder.name : "None"}</td>
           <td>{data.location.address}</td>
           <td>{data.status}</td>
         </tr>
