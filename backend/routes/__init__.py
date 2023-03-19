@@ -10,6 +10,7 @@ import routes.responder
 import routes.scheduler
 import routes.sos
 import routes.telegram
+import routes.web
 
 # @app.errorhandler(Exception)
 # def handle_exception(exception: Exception) -> tuple[Response, int]:

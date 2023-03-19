@@ -76,14 +76,6 @@ def get_available_responder(
     return available_responder
 
 
-@app.route("/distress", methods=["GET"])
-async def get_distress_signals():
-    database = Firestore()
-    distress_signals = await database.get_all_incomplete_distress()
-
-    return jsonify([distress.to_dict() for distress in distress_signals])
-
-
 @app.route("/sos", methods=["GET"])
 async def request_help():
     args = request.args
