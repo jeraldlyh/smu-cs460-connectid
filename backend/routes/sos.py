@@ -125,7 +125,7 @@ async def request_help():
     distress.message_id = message_id
     await database.create_distress(distress)
 
-    return jsonify(f"{available_responder.name} will be attending to {pwid.name}")
+    return jsonify(f"{available_responder.name}")
 
 
 async def process_notify_responder(bot: AsyncTeleBot, distress: Distress) -> int:
