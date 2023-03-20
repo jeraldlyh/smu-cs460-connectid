@@ -10,14 +10,6 @@ SYSTEM = Responder(id="-1", telegram_id=-1, location=Location(-1, -1), name="Sys
 
 
 @app.route("/distress", methods=["GET"])
-async def get_distress_signals():
-    database = Firestore()
-    distress_signals = await database.get_all_incomplete_distress()
-
-    return jsonify([distress.to_dict() for distress in distress_signals])
-
-
-@app.route("/distress/all", methods=["GET"])
 async def get_all_distress_signals():
     database = Firestore()
     distress_signals = await database.get_all_distress()

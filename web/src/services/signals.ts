@@ -22,7 +22,7 @@ const cancelSignal = async (id: number): Promise<ISignalResponse> => {
 };
 
 const fetchSignals = async (): Promise<TMarkerResponse[]> => {
-  const response = await axiosInstance.get<TMarkerResponse[]>("/distress/all");
+  const response = await axiosInstance.get<TMarkerResponse[]>("/distress");
 
   return response.data.map((data) => {
     if (data.is_completed) {
