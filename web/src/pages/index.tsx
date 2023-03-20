@@ -7,7 +7,7 @@ import {
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Marker, TMarkerResponse } from "../components";
-import { MarkerService, SignalService } from "../services";
+import { SignalService } from "../services";
 
 const SINGAPORE_CENTER_COORDINATES = {
   lat: 1.3521,
@@ -20,13 +20,21 @@ export default function Home() {
   const [isAscending, setIsAscending] = useState<boolean>(false);
 
   useEffect(() => {
-    fetchMarkers();
     fetchSignals();
   }, []);
 
-  const fetchMarkers = async (): Promise<void> => {
-    const data = await MarkerService.fetchMarkers();
-    setMarkers(data);
+  useEffect(() => {
+    if (signals && signals.length > 0) {
+      handleMarkers(signals);
+    }
+  }, [signals]);
+
+  const handleMarkers = (signals: TMarkerResponse[]): void => {
+    const markers = signals.filter((signal) => {
+      return !signal.is_completed;
+    });
+
+    setMarkers(markers);
   };
 
   const fetchSignals = async (): Promise<void> => {
