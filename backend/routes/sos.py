@@ -159,12 +159,15 @@ async def process_notify_dispatcher(
     address: str,
     distress: Distress | None = None,
 ) -> int:
+    group_chat_message_id = (
+        distress.group_chat_message_id if distress is not None else -1
+    )
     keyboard = types.InlineKeyboardMarkup()
     accept = types.InlineKeyboardButton(
-        text="✅ Accept", callback_data=f"dispatcher accept"
+        text="✅ Accept", callback_data=f"dispatcher accept {group_chat_message_id}"
     )
     decline = types.InlineKeyboardButton(
-        text="❌ Cancel", callback_data=f"dispatcher cancel"
+        text="❌ Cancel", callback_data=f"dispatcher cancel {group_chat_message_id}"
     )
     keyboard.add(accept, decline, row_width=2)
 
@@ -191,6 +194,35 @@ async def process_notify_dispatcher(
 
     message = await bot.send_message(
         chat_id=get_group_chat_id(),
+        text=text,
+        parse_mode="HTML",
+        reply_markup=keyboard,
+    )
+
+    # Hacky method to include message id in payload
+    keyboard = types.InlineKeyboardMarkup()
+    accept = types.InlineKeyboardButton(
+        text="✅ Accept", callback_data=f"dispatcher accept {message.id}"
+    )
+    decline = types.InlineKeyboardButton(
+        text="❌ Cancel", callback_data=f"dispatcher cancel {message.id}"
+    )
+    keyboard.add(accept, decline, row_width=2)
+
+    text = "<b>❗ Distress Signal ❗</b>\n\n"
+    text += "<b>Status: </b> 🔴 Not Acknowledged\n\n"
+    text += _get_pwid_contacts(pwid)
+    text += f"<b>{pwid.name}</b> is in need of help now. He's currently located at <a href='{_get_google_maps_link(address)}'>{address}</a>.\n\n"
+
+    if responder is None:
+        text += "There's no responders available at this moment. Kindly handle this signal manually or wait for the system to look for a responder."
+    else:
+        text += f"A message has been sent out to <b>{responder.name}</b> to request for assistance."
+    text += "\n\n<i>If you think that this is a false signal, please proceed to cancel this signal.</i>"
+
+    await bot.edit_message_text(
+        chat_id=get_group_chat_id(),
+        message_id=message.id,
         text=text,
         parse_mode="HTML",
         reply_markup=keyboard,
