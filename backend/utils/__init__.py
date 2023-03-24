@@ -16,3 +16,7 @@ def get_file_path(filename: str) -> str:
 
 def get_is_dev_env() -> bool:
     return bool(os.getenv("IS_DEV", False))
+
+
+def get_is_mock_location() -> bool:
+    return bool(os.getenv("MOCK_LOCATION", False))

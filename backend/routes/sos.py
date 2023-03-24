@@ -2,6 +2,7 @@ import sys
 from typing import List, cast
 
 import requests
+from backend.utils import get_is_mock_location
 from database import Firestore
 from database.models import PWID, Distress, Location, Responder
 from flask import jsonify, request
@@ -34,9 +35,11 @@ def _get_location_of_ip_address(ip_address: str) -> Location:
     print(result)
 
     return Location(
-        longitude=result["lon"],
-        latitude=result["lat"],
-        address=f"{result['district']}, (S){result['zip']}",
+        longitude=1.2939 if get_is_mock_location() else result["lon"],
+        latitude=103.8466 if get_is_mock_location() else result["lat"],
+        address="Fort Canning Park, (S)179037, infront of the handicap sign and below the tree"
+        if get_is_mock_location()
+        else f"{result['district']}, (S){result['zip']}",
     )
 
 
