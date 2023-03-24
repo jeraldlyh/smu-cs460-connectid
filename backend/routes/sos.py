@@ -2,13 +2,12 @@ import sys
 from typing import List, cast
 
 import requests
-from backend.utils import get_is_mock_location
 from database import Firestore
 from database.models import PWID, Distress, Location, Responder
 from flask import jsonify, request
 from telebot import types
 from telebot.async_telebot import AsyncTeleBot
-from utils import get_group_chat_id
+from utils import get_group_chat_id, get_is_mock_location
 from utils.medical import _get_list_of_existing_experience
 from utils.text import _get_pwid_contacts
 from utils.url import _get_google_maps_link
