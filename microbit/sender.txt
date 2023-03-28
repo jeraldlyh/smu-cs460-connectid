@@ -1,0 +1,7 @@
+radio.set_group(167)
+radio.set_transmit_power(7)
+
+def on_forever():
+    radio.send_string("1")
+    basic.pause(200)
+basic.forever(on_forever)
