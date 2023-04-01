@@ -16,6 +16,12 @@ void printDetail(uint8_t type, int value);
 int button = 15;
 int buttonState = 0;
 
+const char* ssid     = "REPLACE_WITH_YOUR_SSID";
+const char* password = "REPLACE_WITH_YOUR_PASSWORD";
+const char* HTTPRequest = "https://plankton-app-jgfdd.ondigitalocean.app/sos?name=Wu Kai Ming";
+
+
+
 void setup() {
   //this following code is to configure the button to be a input source, where the INPUT_PULLUP is to make use of the inbuilt resistor in the NodeMCU.
   pinMode(button, INPUT_PULLUP);
@@ -53,7 +59,7 @@ void setup() {
   }
 
   WiFi.mode(WIFI_STA);
-  WiFiMulti.addAP("JY Phone", "kendrick0808");
+  WiFiMulti.addAP(ssid, password);
   while (WiFiMulti.run() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
@@ -127,7 +133,7 @@ String sendReq() {
     HTTPClient https;
 
     Serial.print("[HTTPS] begin...\n");
-    if (https.begin(*client, "https://plankton-app-jgfdd.ondigitalocean.app/sos?name=Wu Kai Ming")) {  // HTTPS
+    if (https.begin(*client, HTTPRequest)) {  // HTTPS
 
       Serial.print("[HTTPS] GET...\n");
       // start connection and send HTTP header
