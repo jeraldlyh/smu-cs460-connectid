@@ -30,9 +30,9 @@ export default function Home() {
   }, [signals]);
 
   const handleMarkers = (signals: TMarkerResponse[]): void => {
-    const markers = signals.filter((signal) => {
-      return !signal.is_completed;
-    });
+    // const markers = signals.filter((signal) => {
+    //   return !signal.is_completed;
+    // });
 
     setMarkers(markers);
   };
@@ -96,7 +96,7 @@ export default function Home() {
         </div>
       </div>
       <GoogleMapReact
-        bootstrapURLKeys={{ key: "" }}
+        bootstrapURLKeys={{ key: process.env.NEXT_PUBLIC_API_KEY || "" }}
         defaultZoom={12}
         defaultCenter={SINGAPORE_CENTER_COORDINATES}
         options={{
