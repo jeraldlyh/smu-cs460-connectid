@@ -31,6 +31,7 @@ async def process_acknowledge_distress(
 
     anchor_tag = _get_anchor_tag(distress)
     pwid_emergency_contacts = _get_pwid_contacts(distress.pwid)
+    print(pwid_emergency_contacts)
 
     # Responder message
     await bot.edit_message_text(
@@ -49,6 +50,8 @@ async def process_acknowledge_distress(
     keyboard.add(decline)
     text = "<b>❗ Distress Signal ❗</b>\n\n"
     text += "<b>Status: </b> 🟠 Acknowledged\n\n"
+    text += pwid_emergency_contacts
+    text + "\n\n"
     responder = cast(Responder, distress.responder)
     text += f"<b>{responder.name} - {responder.phone_number}</b> is on the way to assist <b>{distress.pwid.name}</b> at {anchor_tag}\n\n"
     text += "<i>If you think that this is a false signal, please proceed to cancel this signal.</i>"
