@@ -34,7 +34,7 @@ export default function Home() {
     //   return !signal.is_completed;
     // });
 
-    setMarkers(markers);
+    setMarkers(signals);
   };
 
   const fetchSignals = async (): Promise<void> => {
