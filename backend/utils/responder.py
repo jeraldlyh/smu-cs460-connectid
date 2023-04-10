@@ -9,6 +9,7 @@ from telebot.async_telebot import AsyncTeleBot
 
 from utils import get_group_chat_id
 from utils.handlers import process_welcome_message
+from utils.text import _get_pwid_contacts
 from utils.url import _get_google_maps_link
 
 
@@ -29,12 +30,13 @@ async def process_acknowledge_distress(
     await database.update_distress(distress)
 
     anchor_tag = _get_anchor_tag(distress)
+    pwid_emergency_contacts = _get_pwid_contacts(distress.pwid)
 
     # Responder message
     await bot.edit_message_text(
         chat_id=callback.message.chat.id,
         message_id=callback.message.id,
-        text=f"You have acknowledged this distress signal. Kindly head over to {anchor_tag}",
+        text=f"You have acknowledged this distress signal. Kindly head over to {anchor_tag}\n {pwid_emergency_contacts}",
         parse_mode="HTML",
     )
 
