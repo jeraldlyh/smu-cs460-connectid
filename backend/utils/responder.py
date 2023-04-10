@@ -31,13 +31,12 @@ async def process_acknowledge_distress(
 
     anchor_tag = _get_anchor_tag(distress)
     pwid_emergency_contacts = _get_pwid_contacts(distress.pwid)
-    print(pwid_emergency_contacts)
 
     # Responder message
     await bot.edit_message_text(
         chat_id=callback.message.chat.id,
         message_id=callback.message.id,
-        text=f"You have acknowledged this distress signal. Kindly head over to {anchor_tag}\n {pwid_emergency_contacts}",
+        text=f"You have acknowledged this distress signal. Kindly head over to {anchor_tag}\n\n{pwid_emergency_contacts}",
         parse_mode="HTML",
     )
 
