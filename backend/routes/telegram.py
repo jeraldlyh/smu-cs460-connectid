@@ -12,7 +12,7 @@ from utils.calendar import Calendar, CallbackFactory
 from utils.dispatcher import process_false_distress, process_manual_acknowledge_distress
 from utils.form import (
     process_address,
-    process_date_of_birth,
+    # process_date_of_birth,
     process_gender,
     process_language,
     process_name,
@@ -21,7 +21,7 @@ from utils.form import (
     process_phone_number,
     process_welcome_message,
 )
-from utils.handlers import process_cancel, process_profile, process_welcome_message
+from utils.handlers import process_cancel, process_profile, process_welcome_message, process_pwid_profile
 from utils.location import process_check_in, process_check_out, process_location
 from utils.medical import (
     process_add_medical_condition,
@@ -46,7 +46,8 @@ WEBHOOK_URL_PATH = f"/${API_TOKEN}"
 
 bot = AsyncTeleBot(API_TOKEN, state_storage=StateMemoryStorage())
 calendar = Calendar()
-calendar_callback = CallbackFactory("calendar", "action", "day", "month", "day")
+calendar_callback = CallbackFactory(
+    "calendar", "action", "day", "month", "day")
 
 
 @app.route("/setWebhook", methods=["GET"])
@@ -90,20 +91,23 @@ async def callback_handler(call: types.CallbackQuery) -> None:
             await process_onboard(bot=bot, database=database, callback=call)
         case "language":
             await process_language(
-                bot=bot, database=database, callback=call, languages=[callback_data[1]]
+                bot=bot, database=database, callback=call, languages=[
+                    callback_data[1]]
             )
-        case "calendar":
-            await process_date_of_birth(
-                bot=bot,
-                database=database,
-                callback=call,
-                calendar=calendar,
-                callback_data=callback_data,
-            )
+        # case "calendar":
+            # await process_date_of_birth(
+            #     bot=bot,
+            #     database=database,
+            #     callback=call,
+            #     calendar=calendar,
+            #     callback_data=callback_data,
+            # )
         case "gender":
             await process_gender(
                 bot=bot, database=database, callback=call, gender=callback_data[2]
             )
+        case "pwid_profile":
+            await process_pwid_profile(bot=bot, database=database, callback=call)
         case "profile":
             await process_profile(bot=bot, database=database, callback=call)
         case "option":

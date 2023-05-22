@@ -88,7 +88,8 @@ async def process_language(
     await database.update_responder(responder)
 
     # Proceed to next step
-    text = format_form_text(responder, "Kindly provide your phone number")
+    text = format_form_text(
+        responder, "Kindly provide your 8 digit phone number")
     await bot.edit_message_text(
         chat_id=callback.message.chat.id,
         message_id=callback.message.id,
@@ -108,7 +109,8 @@ async def process_phone_number(
     responder.state = _retrieve_next_state(responder)
 
     # Proceed to next step
-    text = format_form_text(responder, "Kindly provide your NRIC (last 4 digits)")
+    text = format_form_text(
+        responder, "Kindly provide your NRIC (last 4 digits)")
     response = await bot.edit_message_text(
         chat_id=message.chat.id,
         message_id=responder.message_id,
@@ -155,69 +157,90 @@ async def process_address(
 
     responder.address = message.text
     responder.state = _retrieve_next_state(responder)
+    # await database.update_responder(responder)
 
-    # Proceed to next step
-    now = datetime.now()
-    text = format_form_text(responder, "Kindly provide your date of birth")
-    await bot.edit_message_text(
-        chat_id=message.chat.id,
-        message_id=responder.message_id,
-        text=text,
-        reply_markup=calendar.create(
-            name=factory.prefix,
-            month=now.month,
-            year=1990,  # NOTE: Temporary workaround for not being able to select year
-            delete_upon_completion=False,
-        ),
-        parse_mode="HTML",
-    )
-    return True
-
-
-async def process_date_of_birth(
-    bot: AsyncTeleBot,
-    database: Firestore,
-    callback: types.CallbackQuery,
-    calendar: Calendar,
-    callback_data: List[str],
-) -> None:
-    # Handles calendar callbacks
-    name, action, day, month, year = callback_data
-    response = await calendar.handle_callback(
-        bot=bot,
-        callback=callback,
-        name=name,
-        action=action,
-        day=int(day),
-        month=int(month),
-        year=int(year),
-    )
-    print(response)
-    if not isinstance(response, datetime):
-        return
-
-    responder = await database.get_responder(callback.from_user.id)
-    responder.date_of_birth = str(response.date())
-    responder.state = _retrieve_next_state(responder)
-    await database.update_responder(responder)
-
+    # # Proceed to next step
+    # now = datetime.now()
+    # text = format_form_text(responder, "Kindly provide your date of birth")
+    # await bot.edit_message_text(
+    #     chat_id=message.chat.id,
+    #     message_id=responder.message_id,
+    #     text=text,
+    #     reply_markup=calendar.create(
+    #         name=factory.prefix,
+    #         month=now.month,
+    #         year=1990,  # NOTE: Temporary workaround for not being able to select year
+    #         delete_upon_completion=False,
+    #     ),
+    #     parse_mode="HTML",
+    # )
     # Proceeds to next step
     genders = ["👦 Male", "👧 Female"]
     keyboard = types.InlineKeyboardMarkup()
     buttons = [
-        types.InlineKeyboardButton(gender, callback_data=f"gender {gender.lower()}")
+        types.InlineKeyboardButton(
+            gender, callback_data=f"gender {gender.lower()}")
         for gender in genders
     ]
     keyboard.add(*buttons, row_width=2)
 
     text = format_form_text(responder, "Kindly select your gender")
     await bot.edit_message_text(
-        chat_id=callback.message.chat.id,
+        chat_id=message.chat.id,
         message_id=responder.message_id,
         text=text,
         reply_markup=keyboard,
         parse_mode="HTML",
     )
+
+    return True
+
+
+# async def process_date_of_birth(
+#     bot: AsyncTeleBot,
+#     database: Firestore,
+#     callback: types.CallbackQuery,
+#     calendar: Calendar,
+#     callback_data: List[str],
+# ) -> None:
+#     # Handles calendar callbacks
+#     name, action, day, month, year = callback_data
+#     response = await calendar.handle_callback(
+#         bot=bot,
+#         callback=callback,
+#         name=name,
+#         action=action,
+#         day=int(day),
+#         month=int(month),
+#         year=int(year),
+#     )
+#     print(response)
+#     if not isinstance(response, datetime):
+#         return
+
+#     responder = await database.get_responder(callback.from_user.id)
+#     responder.date_of_birth = str(response.date())
+#     responder.state = _retrieve_next_state(responder)
+#     await database.update_responder(responder)
+
+#     # Proceeds to next step
+#     genders = ["👦 Male", "👧 Female"]
+#     keyboard = types.InlineKeyboardMarkup()
+#     buttons = [
+#         types.InlineKeyboardButton(
+#             gender, callback_data=f"gender {gender.lower()}")
+#         for gender in genders
+#     ]
+#     keyboard.add(*buttons, row_width=2)
+
+#     text = format_form_text(responder, "Kindly select your gender")
+#     await bot.edit_message_text(
+#         chat_id=callback.message.chat.id,
+#         message_id=responder.message_id,
+#         text=text,
+#         reply_markup=keyboard,
+#         parse_mode="HTML",
+#     )
 
 
 async def process_gender(
