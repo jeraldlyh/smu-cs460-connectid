@@ -33,11 +33,18 @@ async def process_acknowledge_distress(
     pwid_emergency_contacts = _get_pwid_contacts(distress.pwid)
 
     # Responder message
+    keyboard = types.InlineKeyboardMarkup()
+    profile = types.InlineKeyboardButton(
+        text="📖 PWID Profile",
+        callback_data="pwid_profile"
+    )
+    keyboard.add(profile)
     await bot.edit_message_text(
         chat_id=callback.message.chat.id,
         message_id=callback.message.id,
         text=f"You have acknowledged this distress signal. Kindly head over to {anchor_tag}\n\n{pwid_emergency_contacts}",
         parse_mode="HTML",
+        reply_markup=keyboard
     )
 
     # Dispatcher group chat message

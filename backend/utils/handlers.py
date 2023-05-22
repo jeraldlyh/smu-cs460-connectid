@@ -1,9 +1,11 @@
 from typing import Optional, cast
 
 from database import Firestore
-from database.models import CustomStates, Responder
+from database.models import CustomStates, Responder, Distress
 from telebot import types
 from telebot.async_telebot import AsyncTeleBot
+from utils.url import _get_google_maps_link
+
 
 CANCEL_BUTTON = types.InlineKeyboardButton("Cancel", callback_data="cancel")
 
@@ -107,7 +109,7 @@ async def process_profile(
     text += f"<b>Name</b>: <i>{responder.name}</i>\n"
     text += f"<b>Gender</b>: <i>{responder.gender}</i>\n"
     text += f"<b>Language(s)</b>: <i>{', '.join(responder.languages)}</i>\n"
-    text += f"<b>Date of Birth</b>: <i>{responder.date_of_birth}</i>\n"
+    # text += f"<b>Date of Birth</b>: <i>{responder.date_of_birth}</i>\n"
     text += f"<b>NRIC</b>: <i>{responder.nric}</i>\n"
     text += f"<b>Phone Number</b>: <i>{responder.phone_number}</i>\n"
     text += f"<b>Address</b>: <i>{responder.address}</i>\n"
@@ -152,4 +154,32 @@ async def process_cancel(
 ) -> None:
     await process_welcome_message(
         bot=bot, database=database, message=callback.message, is_edit=True
+    )
+
+
+def _get_anchor_tag() -> str:
+    return f"<a href='{_get_google_maps_link('Museum, (S)188065')}'>{('Museum, (S)188065')}</a>"
+
+
+async def process_pwid_profile(
+    bot: AsyncTeleBot, database: Firestore, callback: types.CallbackQuery,
+) -> None:
+    pwid = await database.get_pwid("Wu Kai Ming")
+    anchor_tag = _get_anchor_tag()
+    print(pwid)
+    text = "<b>📖  PWID Profile</b>\n\n"
+    text += f"<b>Name</b>: <i>{pwid.name}</i>\n"
+    text += f"<b>Gender</b>: <i>{pwid.gender}</i>\n"
+    text += f"<b>Location</b>: <i>{anchor_tag}</i>\n"
+    text += f"<b>Language(s)</b>: <i>{pwid.language_preference}</i>\n"
+    text += f"<b>NRIC</b>: <i>{pwid.nric}</i>\n"
+    text += f"<b>Phone Number</b>: <i>{pwid.phone_number}</i>\n"
+    text += f"<b>Address</b>: <i>{pwid.address}</i>\n"
+    text += f"<b>Medical Condition</b>: <i>{'[ '.join(pwid.medical_conditions)}</i>"
+
+    await bot.edit_message_text(
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.id,
+        text=text,
+        parse_mode="HTML",
     )
